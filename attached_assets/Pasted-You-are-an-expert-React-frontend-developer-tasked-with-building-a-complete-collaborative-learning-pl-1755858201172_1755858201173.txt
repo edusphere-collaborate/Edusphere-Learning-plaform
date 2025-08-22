@@ -1,0 +1,475 @@
+You are an expert React frontend developer tasked with building a complete collaborative learning platform called "Study Discuss" using React 18, Tailwind CSS, and Lucide React icons. This is a comprehensive educational platform with AI-powered discussion rooms for students called Edushpere.
+
+PROJECT SPECIFICATIONS:
+Technology Stack:
+
+React 18 with functional components and hooks
+
+Tailwind CSS for styling (responsive design)
+
+Lucide React for all icons
+
+React Router DOM for navigation
+
+WebSocket integration for real-time features
+
+Context API for state management
+
+Local storage for user preferences
+
+Design Requirements:
+
+Modern, clean, and academic-focused design
+
+Fully responsive (mobile-first approach)
+
+Dark/light mode toggle
+
+Accessibility compliant (ARIA labels, keyboard navigation)
+
+Professional color scheme with educational aesthetics
+
+COMPLETE APPLICATION STRUCTURE:
+1. LANDING PAGE (/)
+Create a compelling landing page featuring:
+
+Hero Section: Eye-catching header with platform tagline "Collaborate. Learn. Grow Together" and main CTA button "Start Learning Today"
+
+Features Showcase: Three-column grid highlighting "AI-Powered Discussions", "Real-time Collaboration", "Secure Learning Environment"
+
+Statistics Section: Display impressive numbers like "500+ Active Students", "1000+ Discussion Rooms", "24/7 AI Support"
+
+How It Works: Step-by-step process (Sign Up → Join Rooms → Collaborate → Learn)
+
+Testimonials Carousel: Student success stories with photos and quotes
+
+Footer: Links, contact info, social media icons
+
+Key Components:
+
+Navigation bar with logo, menu items (Features, About, Contact), and Login/Signup buttons
+
+Responsive hero banner with background image/gradient
+
+Interactive feature cards with hover effects
+
+Call-to-action sections throughout
+
+2. AUTHENTICATION SYSTEM
+Login Page (/login):
+
+Clean form with email/password fields
+
+"Remember Me" checkbox
+
+"Forgot Password?" link
+
+Social login options (Google, GitHub)
+
+Link to registration page
+
+Form validation with error messaging
+
+Register Page (/register):
+
+Multi-step registration form:
+
+Step 1: Basic info (name, email, password)
+
+Step 2: Academic details (university, field of study, year)
+
+Step 3: Interests and subjects
+
+Progress indicator
+
+Terms and conditions acceptance
+
+Email verification flow
+
+Password Reset (/reset-password):
+
+Email input form
+
+Success confirmation
+
+New password creation form
+
+3. MAIN DASHBOARD (/dashboard)
+Layout Structure:
+
+Sidebar Navigation: Collapsible menu with icons for Dashboard, My Rooms, Explore, AI Assistant, Profile, Settings
+
+Top Header: Search bar, notifications bell, user avatar dropdown, theme toggle
+
+Main Content Area: Dynamic content based on selected navigation
+
+Dashboard Home:
+
+Welcome message with user's name
+
+Quick stats cards (Active Rooms, Messages Today, AI Interactions)
+
+Recent Activities feed
+
+Recommended rooms based on interests
+
+Quick actions (Create Room, Join Room, Browse Topics)
+
+4. ROOMS MANAGEMENT SYSTEM
+My Rooms Page (/dashboard/rooms):
+
+Grid/list view toggle
+
+Filter options (Active, Archived, Created by Me, Joined)
+
+Search functionality
+
+Room cards showing:
+
+Room name and description
+
+Participant count
+
+Last activity timestamp
+
+AI assistance status
+
+Join/Leave buttons
+
+Room Creation (/dashboard/create-room):
+
+Form with fields:
+
+Room name and description
+
+Subject/Category selection
+
+Privacy settings (Public/Private)
+
+AI assistant configuration
+
+Maximum participants limit
+
+Room rules and guidelines
+
+Preview section showing how room will appear
+
+Advanced settings panel
+
+Explore Rooms (/dashboard/explore):
+
+Category filters (Mathematics, Science, Literature, etc.)
+
+Search with advanced filters
+
+Trending rooms section
+
+Room cards with join functionality
+
+Pagination for large result sets
+
+5. DISCUSSION ROOM INTERFACE (/room/:roomId)
+Core Layout:
+
+Left Sidebar: Room info, participants list, room settings
+
+Main Chat Area: Message thread with real-time updates
+
+Right Sidebar: AI Assistant panel, shared resources, quick actions
+
+Chat Interface Features:
+
+Message bubbles with user avatars and timestamps
+
+Message types: text, images, files, code snippets
+
+Reply and quote functionality
+
+Message reactions (emojis)
+
+Typing indicators
+
+Online status indicators
+
+AI Assistant Integration:
+
+Floating AI widget that can be expanded/minimized
+
+AI chat interface separate from main discussion
+
+Context-aware responses based on room discussion
+
+AI suggestion prompts related to current topic
+
+Voice-to-text input option
+
+Multimedia Support:
+
+Drag-and-drop file upload
+
+Image preview and gallery view
+
+Document viewer for PDFs
+
+Code syntax highlighting
+
+Screen sharing capabilities
+
+6. USER PROFILE SYSTEM
+Profile Page (/profile):
+
+Profile Header: Avatar, name, bio, join date, activity stats
+
+Tabs Interface:
+
+Overview: Recent activity, achievements, badges
+
+Rooms: All rooms user has joined/created
+
+AI Interactions: History of AI conversations
+
+Settings: Account preferences, privacy settings
+
+Edit Profile (/profile/edit):
+
+Avatar upload with crop functionality
+
+Personal information form
+
+Academic details update
+
+Privacy preferences
+
+Notification settings
+
+7. AI ASSISTANT FEATURES
+Standalone AI Chat (/ai-assistant):
+
+Full-screen AI conversation interface
+
+Chat history with search functionality
+
+Topic-based conversation organization
+
+Export chat transcripts
+
+AI personality selection
+
+AI Features Integration:
+
+Context-aware suggestions in discussions
+
+Auto-generated study summaries
+
+Question answering based on room content
+
+Learning progress tracking
+
+Personalized study recommendations
+
+8. SETTINGS AND PREFERENCES (/settings)
+Settings Categories:
+
+Account: Basic info, password change, email preferences
+
+Privacy: Who can see profile, message permissions
+
+Notifications: Email, push, in-app notification controls
+
+Appearance: Dark/light mode, font size, color themes
+
+AI Preferences: AI interaction frequency, response style
+
+Room Defaults: Default room settings, auto-join preferences
+
+9. RESPONSIVE NAVIGATION SYSTEM
+Navigation Structure:
+
+text
+/                          # Landing page
+/login                     # Authentication
+/register                  # User registration
+/dashboard                 # Main dashboard
+/dashboard/rooms           # My rooms
+/dashboard/explore         # Explore rooms
+/dashboard/create-room     # Create new room
+/room/:roomId              # Individual room
+/profile                   # User profile
+/profile/edit              # Edit profile
+/ai-assistant             # AI chat
+/settings                 # User settings
+/help                     # Help and support
+/privacy                  # Privacy policy
+/terms                    # Terms of service
+10. COMPONENT ARCHITECTURE
+Shared Components:
+
+Layout Components: Header, Sidebar, Footer, Container
+
+UI Components: Button, Input, Modal, Dropdown, Card, Badge
+
+Form Components: FormField, Validation, FileUpload
+
+Chat Components: MessageBubble, ChatInput, UserAvatar
+
+AI Components: AIWidget, AIChat, AIResponse
+
+Navigation: NavLink, Breadcrumb, Pagination
+
+DETAILED IMPLEMENTATION REQUIREMENTS:
+STATE MANAGEMENT:
+Use React Context for global state (user, theme, notifications)
+
+Local state with useState for component-specific data
+
+Custom hooks for WebSocket connections
+
+Persistent state using localStorage/sessionStorage
+
+REAL-TIME FEATURES:
+WebSocket connection management
+
+Real-time message updates
+
+Online/offline status tracking
+
+Typing indicators implementation
+
+Auto-reconnection on connection loss
+
+AI INTEGRATION:
+AI widget that can overlay any page
+
+Context-aware AI responses
+
+Chat history management
+
+AI loading states and error handling
+
+Conversation threading
+
+RESPONSIVE DESIGN:
+Mobile-first responsive breakpoints
+
+Collapsible sidebars for mobile
+
+Touch-friendly interface elements
+
+Swipe gestures for mobile navigation
+
+Adaptive layouts for tablets
+
+ACCESSIBILITY:
+ARIA labels and roles
+
+Keyboard navigation support
+
+Screen reader compatibility
+
+High contrast mode
+
+Focus management
+
+PERFORMANCE OPTIMIZATION:
+Code splitting with React.lazy
+
+Image optimization and lazy loading
+
+Virtual scrolling for large message lists
+
+Debounced search functionality
+
+Memoization of expensive operations
+
+STYLING SPECIFICATIONS:
+Color Palette:
+Primary: Blue shades for academic feel
+
+Secondary: Green for positive actions
+
+Accent: Purple for AI features
+
+Neutral: Gray scale for text and backgrounds
+
+Alert colors: Red for errors, Yellow for warnings
+
+Typography:
+Headers: Inter or Poppins font family
+
+Body text: System font stack for readability
+
+Code: Fira Code for syntax highlighting
+
+Component Styling:
+Consistent spacing using Tailwind's spacing scale
+
+Rounded corners for modern appearance
+
+Subtle shadows for depth
+
+Smooth transitions for interactive elements
+
+Consistent button styles across the platform
+
+FUNCTIONALITY REQUIREMENTS:
+User Experience:
+Smooth page transitions
+
+Loading states for all async operations
+
+Error boundaries for graceful error handling
+
+Offline detection and messaging
+
+Progressive enhancement
+
+Security Considerations:
+Input sanitization for all user content
+
+XSS protection
+
+Secure file upload handling
+
+Authentication state management
+
+Route protection for authenticated areas
+
+SPECIFIC IMPLEMENTATION INSTRUCTIONS:
+Start with the project setup: Create React app, install dependencies, configure Tailwind CSS
+
+Build the routing structure using React Router DOM
+
+Create the design system with reusable components
+
+Implement authentication flow with context management
+
+Build the dashboard with responsive layout
+
+Develop room functionality with real-time features
+
+Integrate AI assistant throughout the platform
+
+Add profile and settings pages
+
+Implement responsive design and accessibility
+
+Optimize performance and add error handling
+
+DELIVERABLES:
+Complete React application with all specified pages and features
+
+Responsive design working across all device sizes
+
+AI integration with floating widget and dedicated chat
+
+Real-time messaging functionality
+
+User authentication and profile management
+
+Dark/light mode implementation
+
+Comprehensive component library
+
+Proper error handling and loading states
+
+Build this as a production-ready application with clean, maintainable code, proper component organization, and excellent user experience. Focus on creating an intuitive interface that encourages collaboration and learning while showcasing the AI integration as a key differentiator.
