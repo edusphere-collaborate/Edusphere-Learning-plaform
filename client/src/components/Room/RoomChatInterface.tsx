@@ -32,8 +32,7 @@ import { EnhancedMessageBubble } from '@/components/Room/EnhancedMessageBubble';
 import { MessageSearch } from '@/components/Room/MessageSearch';
 import { EmojiPicker } from '@/components/Room/EmojiPicker';
 import { Popover, PopoverContent, PopoverTrigger } from '@/components/ui/popover';
-import { useAuth } from '@/contexts/AuthContext';
-import { useAuthenticatedFetch } from '@/contexts/AuthContext';
+import { useAuth, useApiClient } from '@/contexts/AuthContext';
 import { useToast } from '@/hooks/use-toast';
 import { cn } from '@/lib/utils';
 
@@ -70,7 +69,7 @@ export function RoomChatInterface({ room, onClose, onRoomAction, onMessagesChang
   
   // Hooks
   const { user } = useAuth();
-  const authenticatedFetch = useAuthenticatedFetch();
+  const apiClient = useApiClient();
   const queryClient = useQueryClient();
   const { toast } = useToast();
 
@@ -92,11 +91,7 @@ export function RoomChatInterface({ room, onClose, onRoomAction, onMessagesChang
     queryKey: ['room-messages', room.id],
     queryFn: async () => {
       console.log(`[RoomChatInterface] Fetching messages for room ${room.id}`);
-      const response = await authenticatedFetch(`/api/rooms/${room.id}/messages`);
-      if (!response.ok) {
-        throw new Error('Failed to fetch messages');
-      }
-      const data = await response.json();
+      const data = await apiClient.getRoomMessages(room.id);
       console.log(`[RoomChatInterface] Fetched ${data.length} messages`);
       return data;
     },
@@ -105,37 +100,20 @@ export function RoomChatInterface({ room, onClose, onRoomAction, onMessagesChang
   });
 
   /**
-   * Fetch room members
+   * Use room's userCount for member display instead of fetching separately
    */
-  const { data: members = [] } = useQuery({
-    queryKey: ['room-members', room.id],
-    queryFn: async () => {
-      const response = await authenticatedFetch(`/api/rooms/${room.id}/members`);
-      if (!response.ok) {
-        throw new Error('Failed to fetch members');
-      }
-      return response.json();
-    },
-    enabled: !!room.id,
-  });
+  const memberCount = room.userCount || room.memberCount || 0;
 
   /**
    * Send message mutation
    */
   const sendMessageMutation = useMutation({
     mutationFn: async (content: string) => {
-      const response = await authenticatedFetch(`/api/rooms/${room.id}/messages`, {
-        method: 'POST',
-        headers: {
-          'Content-Type': 'application/json',
-        },
-        body: JSON.stringify({ content }),
+      return await apiClient.sendMessage(room.id, { 
+        content, 
+        userId: user?.id || '', 
+        roomId: room.id 
       });
-      if (!response.ok) {
-        const error = await response.json();
-        throw new Error(error.message || 'Failed to send message');
-      }
-      return response.json();
     },
     onSuccess: () => {
       setMessageInput('');
@@ -200,24 +178,11 @@ export function RoomChatInterface({ room, onClose, onRoomAction, onMessagesChang
   // Message reaction handler
   const handleMessageReaction = async (messageId: string, emoji: string) => {
     try {
-      const response = await authenticatedFetch(`/api/rooms/${room.id}/messages/${messageId}/reactions`, {
-        method: 'POST',
-        headers: {
-          'Content-Type': 'application/json',
-        },
-        body: JSON.stringify({ emoji }),
-      });
-
-      if (!response.ok) {
-        throw new Error('Failed to add reaction');
-      }
-
-      // Invalidate messages query to refetch with updated reactions
-      queryClient.invalidateQueries({ queryKey: ['room-messages', room.id] });
-
+      // TODO: Implement when backend supports reactions
+      console.log('Message reaction not implemented yet:', { messageId, emoji });
       toast({
-        title: "Reaction added",
-        description: `Added ${emoji} reaction to message`,
+        title: "Feature Coming Soon",
+        description: "Message reactions will be available soon",
       });
     } catch (error) {
       console.error('Error adding reaction:', error);
@@ -232,25 +197,11 @@ export function RoomChatInterface({ room, onClose, onRoomAction, onMessagesChang
   // Message edit handler
   const handleMessageEdit = async (messageId: string, newContent: string) => {
     try {
-      const response = await authenticatedFetch(`/api/rooms/${room.id}/messages/${messageId}`, {
-        method: 'PUT',
-        headers: {
-          'Content-Type': 'application/json',
-        },
-        body: JSON.stringify({ content: newContent }),
-      });
-
-      if (!response.ok) {
-        throw new Error('Failed to edit message');
-      }
-
-      // Invalidate messages query to refetch with updated content
-      queryClient.invalidateQueries({ queryKey: ['room-messages', room.id] });
-      setEditingMessageId(null);
-
+      // TODO: Implement when backend supports message editing
+      console.log('Message edit not implemented yet:', { messageId, newContent });
       toast({
-        title: "Message updated",
-        description: "Your message has been edited successfully",
+        title: "Feature Coming Soon",
+        description: "Message editing will be available soon",
       });
     } catch (error) {
       console.error('Error editing message:', error);
@@ -265,20 +216,11 @@ export function RoomChatInterface({ room, onClose, onRoomAction, onMessagesChang
   // Message delete handler
   const handleMessageDelete = async (messageId: string) => {
     try {
-      const response = await authenticatedFetch(`/api/rooms/${room.id}/messages/${messageId}`, {
-        method: 'DELETE',
-      });
-
-      if (!response.ok) {
-        throw new Error('Failed to delete message');
-      }
-
-      // Invalidate messages query to refetch without deleted message
-      queryClient.invalidateQueries({ queryKey: ['room-messages', room.id] });
-
+      // TODO: Implement when backend supports message deletion
+      console.log('Message delete not implemented yet:', messageId);
       toast({
-        title: "Message deleted",
-        description: "Your message has been deleted successfully",
+        title: "Feature Coming Soon",
+        description: "Message deletion will be available soon",
       });
     } catch (error) {
       console.error('Error deleting message:', error);
@@ -430,18 +372,39 @@ export function RoomChatInterface({ room, onClose, onRoomAction, onMessagesChang
       new Date(a.createdAt || 0).getTime() - new Date(b.createdAt || 0).getTime()
     );
     
-    // Notify parent component of message changes for AI analysis
-    if (onMessagesChange) {
-      onMessagesChange(sorted);
-    }
-    
     return sorted;
-  }, [messages, onMessagesChange]);
+  }, [messages]);
+
+  /**
+   * Notify parent of message changes separately to avoid infinite loop
+   */
+  React.useEffect(() => {
+    if (onMessagesChange && sortedMessages.length > 0) {
+      // Convert PublicUser to User for compatibility
+      const messagesWithFullUser = sortedMessages.map(msg => ({
+        ...msg,
+        user: {
+          ...msg.user,
+          email: '', // PublicUser doesn't have email, use empty string
+          role: UserRole.USER, // Default to USER role
+          updatedAt: msg.createdAt || new Date().toISOString(), // Use createdAt as fallback
+          bio: undefined,
+          university: undefined,
+          fieldOfStudy: undefined,
+          yearOfStudy: undefined,
+          interests: undefined,
+          profilePicture: undefined,
+          isEmailVerified: undefined
+        }
+      }));
+      onMessagesChange(messagesWithFullUser);
+    }
+  }, [sortedMessages, onMessagesChange]);
 
   return (
     <div className="flex flex-col h-full bg-white dark:bg-gray-900">
-      {/* Chat Header */}
-      <div className="flex items-center justify-between p-4 border-b border-gray-200 dark:border-gray-700 bg-white dark:bg-gray-900">
+      {/* Chat Header - Fixed Position */}
+      <div className="flex-shrink-0 flex items-center justify-between p-4 border-b border-gray-200 dark:border-gray-700 bg-white dark:bg-gray-900 sticky top-0 z-10">
         <div className="flex items-center space-x-3">
           {/* Room Avatar */}
           <Avatar className="w-10 h-10">
@@ -457,7 +420,7 @@ export function RoomChatInterface({ room, onClose, onRoomAction, onMessagesChang
             </h3>
             <div className="flex items-center space-x-2">
               <span className="text-sm text-gray-500 dark:text-gray-400">
-                {members.length} members
+                {memberCount} {memberCount === 1 ? 'member' : 'members'}
               </span>
               {room.subject && (
                 <>
@@ -585,19 +548,19 @@ export function RoomChatInterface({ room, onClose, onRoomAction, onMessagesChang
             firstName: '', 
             lastName: '', 
             email: '',
-            role: 'User' as UserRole,
+            role: UserRole.USER,
             createdAt: new Date().toISOString(),
             updatedAt: new Date().toISOString()
           }}
         />
       )}
 
-      {/* Messages Area */}
-      <div className="flex-1 flex">
+      {/* Messages Area - Scrollable */}
+      <div className="flex-1 flex overflow-hidden">
         {/* Messages */}
-        <div className="flex-1 flex flex-col">
-          <ScrollArea className="flex-1 p-4">
-            <div className="space-y-1">
+        <div className="flex-1 flex flex-col min-h-0">
+          <div className="flex-1 overflow-y-auto overflow-x-hidden p-4">
+            <div className="space-y-1 min-h-full max-w-full">
               {messagesLoading ? (
                 // Loading skeleton
                 [...Array(5)].map((_, i) => (
@@ -624,10 +587,10 @@ export function RoomChatInterface({ room, onClose, onRoomAction, onMessagesChang
                 </div>
               ) : (
                 // Messages
-                sortedMessages.map((message, index, array) => {
+                sortedMessages.map((message, index) => {
                   const isOwn = message.userId === user?.id;
-                  const prevMessage = index > 0 ? array[index - 1] : null;
-                  const nextMessage = index < array.length - 1 ? array[index + 1] : null;
+                  const prevMessage = index > 0 ? sortedMessages[index - 1] : null;
+                  const nextMessage = index < sortedMessages.length - 1 ? sortedMessages[index + 1] : null;
                   
                   // Group messages from same user within 5 minutes
                   const isGrouped = prevMessage && 
@@ -636,22 +599,32 @@ export function RoomChatInterface({ room, onClose, onRoomAction, onMessagesChang
                   
                   const showAvatar = !isGrouped || !nextMessage || nextMessage.userId !== message.userId;
 
+                  // Convert PublicUser to User for EnhancedMessageBubble compatibility
+                  const messageWithUser = {
+                    ...message,
+                    user: {
+                      ...message.user,
+                      email: '', // PublicUser doesn't have email
+                      role: UserRole.USER, // Default role
+                      updatedAt: message.createdAt || new Date().toISOString(),
+                      bio: undefined,
+                      university: undefined,
+                      fieldOfStudy: undefined,
+                      yearOfStudy: undefined,
+                      interests: undefined,
+                      profilePicture: undefined,
+                      isEmailVerified: undefined
+                    }
+                  };
+
                   return (
                     <EnhancedMessageBubble
                       key={message.id}
-                      message={message}
+                      message={messageWithUser}
                       isOwn={isOwn}
                       showAvatar={showAvatar}
-                      isGrouped={isGrouped}
-                      onReply={(messageId: string) => {
-                        // Set reply context for message input
-                        console.log('Reply to message:', messageId);
-                        // TODO: Implement reply functionality
-                        // This should set the reply context in the message input component
-                      }}
-                      onReaction={(messageId: string, emoji: string) => handleMessageReaction(messageId, emoji)}
-                      onEdit={(messageId: string, content: string) => handleMessageEdit(messageId, content)}
                       onDelete={() => handleMessageDelete(message.id)}
+                      isEdited={message.isEdited ?? false}
                       onAction={(action: string) => {
                         // Handle message actions like copy, pin, etc.
                         console.log('Message action:', action, 'for message:', message.id);
@@ -703,12 +676,13 @@ export function RoomChatInterface({ room, onClose, onRoomAction, onMessagesChang
                 </div>
               )}
               
-              <div ref={messagesEndRef} />
             </div>
-          </ScrollArea>
+            {/* Auto-scroll anchor */}
+            <div ref={messagesEndRef} />
+          </div>
 
-          {/* Message Input */}
-          <div className="p-4 border-t border-gray-200 dark:border-gray-700 bg-white dark:bg-gray-900">
+          {/* Message Input - Fixed at Bottom */}
+          <div className="flex-shrink-0 p-4 border-t border-gray-200 dark:border-gray-700 bg-white dark:bg-gray-900">
             <div className="flex items-end space-x-3">
               {/* Attachment Button */}
               <Button variant="ghost" size="sm" className="h-9 w-9 p-0 flex-shrink-0">
@@ -767,10 +741,13 @@ export function RoomChatInterface({ room, onClose, onRoomAction, onMessagesChang
               </Button>
             </div>
             
-            {/* Typing Indicator */}
-            {isTyping && (
+            {/* Typing Indicator - Only show for OTHER users typing */}
+            {typingUsers.length > 0 && (
               <div className="mt-2 text-sm text-gray-500 dark:text-gray-400">
-                Someone is typing...
+                {typingUsers.length === 1 
+                  ? `${typingUsers[0]} is typing...` 
+                  : `${typingUsers.length} people are typing...`
+                }
               </div>
             )}
           </div>
@@ -801,23 +778,12 @@ export function RoomChatInterface({ room, onClose, onRoomAction, onMessagesChang
                 <div>
                   <label className="text-sm font-medium text-gray-700 dark:text-gray-300">Members</label>
                   <div className="mt-2 space-y-2">
-                    {members.slice(0, 5).map((member: any) => (
-                      <div key={member.id} className="flex items-center space-x-2">
-                        <Avatar className="w-6 h-6">
-                          <AvatarFallback className="bg-gray-300 dark:bg-gray-600 text-xs">
-                            {getInitials(member.user?.username || member.username || 'U')}
-                          </AvatarFallback>
-                        </Avatar>
-                        <span className="text-sm text-gray-600 dark:text-gray-400">
-                          {member.user?.username || member.username || 'Unknown User'}
-                        </span>
-                      </div>
-                    ))}
-                    {members.length > 5 && (
-                      <p className="text-xs text-gray-500 dark:text-gray-500">
-                        +{members.length - 5} more members
-                      </p>
-                    )}
+                    <div className="text-sm text-gray-500 dark:text-gray-400">
+                      {memberCount} {memberCount === 1 ? 'member' : 'members'} in this room
+                    </div>
+                    <p className="text-xs text-gray-500 dark:text-gray-500 mt-2">
+                      Member list not available - using room count
+                    </p>
                   </div>
                 </div>
               </div>

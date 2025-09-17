@@ -32,31 +32,24 @@ export default function EmailVerification() {
   // Verify email with backend
   const verifyEmail = async (verificationToken: string) => {
     try {
-      const response = await fetch('/api/auth/verify-email', {
-        method: 'POST',
-        headers: {
-          'Content-Type': 'application/json',
-        },
-        body: JSON.stringify({ token: verificationToken }),
+      // Use the API client for consistent error handling
+      const { apiClient } = await import('@/lib/api-client');
+      const response = await apiClient.verifyEmail({ 
+        token: verificationToken,
+        email: userEmail || undefined
       });
 
-      if (response.ok) {
+      if (response.success) {
         setVerificationStatus('success');
         toast({
           title: "Email Verified Successfully",
-          description: "Your email has been verified. You can now access all features.",
+          description: response.message || "Your email has been verified. You can now access all features.",
         });
       } else {
-        const error = await response.json();
-        if (error.code === 'TOKEN_EXPIRED') {
-          setVerificationStatus('expired');
-        } else {
-          setVerificationStatus('error');
-        }
-        
+        setVerificationStatus('error');
         toast({
           title: "Verification Failed",
-          description: error.message || "Failed to verify email",
+          description: response.message || "Failed to verify email",
           variant: "destructive",
         });
       }
@@ -84,22 +77,16 @@ export default function EmailVerification() {
     setIsResending(true);
     
     try {
-      const response = await fetch('/api/auth/resend-verification', {
-        method: 'POST',
-        headers: {
-          'Content-Type': 'application/json',
-        },
-        body: JSON.stringify({ email: userEmail }),
-      });
+      const { apiClient } = await import('@/lib/api-client');
+      const response = await apiClient.resendVerification({ email: userEmail });
 
-      if (response.ok) {
+      if (response.success) {
         toast({
           title: "Verification Email Sent",
-          description: `A new verification email has been sent to ${userEmail}`,
+          description: response.message || `A new verification email has been sent to ${userEmail}`,
         });
       } else {
-        const error = await response.json();
-        throw new Error(error.message || 'Failed to resend verification email');
+        throw new Error(response.message || 'Failed to resend verification email');
       }
     } catch (error: any) {
       toast({

@@ -217,7 +217,9 @@ export function EnhancedMessageBubble({
       
       default:
         return (
-          <div className="prose prose-sm max-w-none dark:prose-invert">
+          <div className={`prose prose-sm max-w-none ${
+            isOwn ? 'prose-invert' : 'dark:prose-invert'
+          }`}>
             {/* Handle reply context */}
             {message.replyToId && message.metadata?.replyTo && (
               <div className="mb-3 p-3 bg-gray-50 dark:bg-gray-700 rounded-lg border-l-4 border-primary-500">
@@ -234,7 +236,9 @@ export function EnhancedMessageBubble({
             )}
             
             {/* Message text with link detection */}
-            <div className="whitespace-pre-wrap break-words">
+            <div className={`whitespace-pre-wrap break-words ${
+              isOwn ? 'text-white' : 'text-gray-900 dark:text-gray-100'
+            }`}>
               {message.content.split(/(\bhttps?:\/\/[^\s]+)/g).map((part: string, index: number) => {
                 if (part.match(/^https?:\/\//)) {
                   return (
@@ -316,13 +320,36 @@ export function EnhancedMessageBubble({
               <span className="text-xs text-gray-500 dark:text-gray-400">
                 {(() => {
                   try {
-                    const date = new Date(message.createdAt);
-                    if (isNaN(date.getTime())) {
+                    // Use sentAt if createdAt is not available (database schema mismatch)
+                    const timestamp = message.createdAt || (message as any).sentAt;
+                    
+                    if (!timestamp) {
+                      console.warn('Message missing both createdAt and sentAt:', message);
                       return 'just now';
                     }
+                    
+                    const date = new Date(timestamp);
+                    if (isNaN(date.getTime())) {
+                      console.warn('Invalid date format:', timestamp);
+                      return 'just now';
+                    }
+                    
+                    // Check if the date is very recent (less than 1 minute ago)
+                    const now = new Date();
+                    const diffInSeconds = (now.getTime() - date.getTime()) / 1000;
+                    
+                    if (diffInSeconds < 60) {
+                      return 'just now';
+                    }
+                    
                     return formatDistanceToNow(date, { addSuffix: true });
                   } catch (error) {
-                    console.warn('Invalid date in message:', message.createdAt, error);
+                    console.error('Error formatting message timestamp:', {
+                      messageId: message.id,
+                      createdAt: message.createdAt,
+                      sentAt: (message as any).sentAt,
+                      error: error
+                    });
                     return 'just now';
                   }
                 })()}

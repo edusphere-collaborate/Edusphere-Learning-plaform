@@ -30,28 +30,11 @@ export function ChatEmptyState({ onCreateRoom, onExploreRooms }: ChatEmptyStateP
 
         {/* Welcome Message */}
         <h2 className="text-2xl font-bold text-gray-900 dark:text-white mb-3">
-          Welcome to EduSphere
+          Select a Room to Chat
         </h2>
-        <p className="text-gray-600 dark:text-gray-400 mb-6 leading-relaxed">
-          Select a room from the sidebar to start chatting with your study group, 
-          or create a new room to begin your collaborative learning journey.
+        <p className="text-gray-600 dark:text-gray-400 mb-8 leading-relaxed">
+          Choose a room from the sidebar to start your conversation or create a new room to begin collaborating.
         </p>
-
-        {/* Features */}
-        <div className="grid grid-cols-1 gap-4 mb-8">
-          <div className="flex items-center justify-center space-x-3 text-sm text-gray-600 dark:text-gray-400">
-            <Users className="w-4 h-4 text-primary-500" />
-            <span>Collaborate with peers</span>
-          </div>
-          <div className="flex items-center justify-center space-x-3 text-sm text-gray-600 dark:text-gray-400">
-            <BookOpen className="w-4 h-4 text-primary-500" />
-            <span>Share knowledge and resources</span>
-          </div>
-          <div className="flex items-center justify-center space-x-3 text-sm text-gray-600 dark:text-gray-400">
-            <Zap className="w-4 h-4 text-primary-500" />
-            <span>AI-powered learning assistance</span>
-          </div>
-        </div>
 
         {/* Action Buttons */}
         <div className="space-y-3">
@@ -72,7 +55,7 @@ export function ChatEmptyState({ onCreateRoom, onExploreRooms }: ChatEmptyStateP
 
         {/* Hint */}
         <p className="text-xs text-gray-500 dark:text-gray-500 mt-6">
-          💡 Tip: Use the search bar to quickly find specific rooms or topics
+          Use the search bar to quickly find specific rooms
         </p>
       </div>
     </div>

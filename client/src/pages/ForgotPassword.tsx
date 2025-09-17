@@ -157,27 +157,21 @@ export default function ForgotPassword() {
     setIsLoading(true);
     
     try {
-      // Send password reset request to backend
-      const response = await fetch('/api/auth/forgot-password', {
-        method: 'POST',
-        headers: {
-          'Content-Type': 'application/json',
-        },
-        body: JSON.stringify({ email: data.email }),
-      });
+      // Use API client for consistent error handling
+      const { apiClient } = await import('@/lib/api-client');
+      const response = await apiClient.forgotPassword({ email: data.email });
 
-      if (!response.ok) {
-        const error = await response.json();
-        throw new Error(error.message || 'Failed to send reset email');
+      if (response.success) {
+        setSentEmail(data.email);
+        setEmailSent(true);
+        
+        toast({
+          title: "Reset Email Sent",
+          description: response.message || `Password reset instructions have been sent to ${data.email}`,
+        });
+      } else {
+        throw new Error(response.message || 'Failed to send reset email');
       }
-
-      setSentEmail(data.email);
-      setEmailSent(true);
-      
-      toast({
-        title: "Reset Email Sent",
-        description: `Password reset instructions have been sent to ${data.email}`,
-      });
     } catch (error: any) {
       toast({
         title: "Error",

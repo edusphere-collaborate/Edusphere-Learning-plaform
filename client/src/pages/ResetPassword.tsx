@@ -55,11 +55,10 @@ export default function ResetPassword() {
       }
 
       try {
-        const response = await fetch(`/api/auth/validate-reset-token?token=${token}`, {
-          method: 'GET',
-        });
+        const { apiClient } = await import('@/lib/api-client');
+        const response = await apiClient.verifyResetToken({ token });
 
-        if (response.ok) {
+        if (response.success) {
           setTokenValid(true);
         } else {
           setTokenValid(false);
@@ -85,29 +84,23 @@ export default function ResetPassword() {
     setIsLoading(true);
     
     try {
-      // Send password reset request to backend
-      const response = await fetch('/api/auth/reset-password', {
-        method: 'POST',
-        headers: {
-          'Content-Type': 'application/json',
-        },
-        body: JSON.stringify({ 
-          token,
-          password: data.password 
-        }),
+      // Use API client for consistent error handling
+      const { apiClient } = await import('@/lib/api-client');
+      const response = await apiClient.resetPassword({ 
+        token,
+        password: data.password 
       });
 
-      if (!response.ok) {
-        const error = await response.json();
-        throw new Error(error.message || 'Failed to reset password');
+      if (response.success) {
+        setResetSuccess(true);
+        
+        toast({
+          title: "Password Reset Successful",
+          description: response.message || "Your password has been successfully reset. You can now log in with your new password.",
+        });
+      } else {
+        throw new Error(response.message || 'Failed to reset password');
       }
-
-      setResetSuccess(true);
-      
-      toast({
-        title: "Password Reset Successful",
-        description: "Your password has been successfully reset. You can now log in with your new password.",
-      });
     } catch (error: any) {
       toast({
         title: "Error",

@@ -22,6 +22,22 @@ import {
   User,
   UpdateUserRequest,
   PublicUser,
+  // Email verification types
+  SendVerificationRequest,
+  SendVerificationResponse,
+  VerifyEmailRequest,
+  VerifyEmailResponse,
+  ResendVerificationRequest,
+  ResendVerificationResponse,
+  // Password reset types
+  ForgotPasswordRequest,
+  ForgotPasswordResponse,
+  VerifyResetTokenRequest,
+  VerifyResetTokenResponse,
+  ResetPasswordRequest,
+  ResetPasswordResponse,
+  ChangePasswordRequest,
+  ChangePasswordResponse,
   // Room types
   Room,
   DetailedRoom,
@@ -46,7 +62,7 @@ import {
   DEFAULT_CONFIG,
   API_ENDPOINTS,
 } from '@/types/api';
-import { getCorsOptions } from '@/lib/cors-config';
+import { apiFallbackManager, checkDevTunnelAuth, handleDevTunnelError } from '@/lib/api-fallback';
 
 /**
  * Custom error classes for different API error scenarios
@@ -210,17 +226,18 @@ export class RequestInterceptor {
   public intercept(options: RequestInit): RequestInit {
     const token = this.tokenManager.getToken();
     
-    // Get CORS-compliant options
-    const corsOptions = getCorsOptions(options);
-    
-    // Add authentication header if token exists
+    // Build headers without CORS interference
     const headers: Record<string, string> = {
-      'Content-Type': 'application/json',
       'Accept': 'application/json',
-      ...(corsOptions.headers as Record<string, string>),
+      ...(options.headers as Record<string, string> || {}),
     };
 
-    // Always add Authorization header if token exists
+    // Add Content-Type for requests with body
+    if (options.body) {
+      headers['Content-Type'] = 'application/json';
+    }
+
+    // Add Authorization header if token exists
     if (token) {
       headers['Authorization'] = `Bearer ${token}`;
       // Debug logging only in development mode
@@ -235,7 +252,7 @@ export class RequestInterceptor {
     }
 
     return {
-      ...corsOptions,
+      ...options,
       headers,
     };
   }
@@ -388,7 +405,19 @@ export class EduSphereApiClient implements IApiClient {
     endpoint: string,
     options: RequestOptions = {}
   ): Promise<T> {
-    const url = `${this.baseURL}${endpoint}`;
+    // Check if we need to use fallback endpoint due to DevTunnel auth issues
+    let baseUrl = this.baseURL;
+    
+    // Check for DevTunnel authentication issues
+    if (baseUrl.includes('devtunnels.ms')) {
+      const needsAuth = await checkDevTunnelAuth(baseUrl);
+      if (needsAuth) {
+        console.warn('[API CLIENT] DevTunnel requires authentication, using fallback endpoint');
+        baseUrl = await apiFallbackManager.getBestEndpoint();
+      }
+    }
+    
+    const url = `${baseUrl}${endpoint}`;
     
     // Build query parameters
     const queryParams = options.params ? this.buildQueryString(options.params) : '';
@@ -409,16 +438,13 @@ export class EduSphereApiClient implements IApiClient {
       console.log('[API CLIENT] Making request:', {
         method: requestOptions.method,
         url: fullUrl,
-        hasBody: !!requestOptions.body
+        hasBody: !!requestOptions.body,
+        usingFallback: baseUrl !== this.baseURL
       });
     }
 
-    // Apply intercepted options with credentials for authentication
-    const interceptedOptions = await this.requestInterceptor.intercept(requestOptions);
-    
-    // Use 'omit' credentials mode to avoid CORS wildcard issue
-    interceptedOptions.credentials = 'omit';
-    interceptedOptions.mode = 'cors';
+    // Apply intercepted options - let backend handle CORS
+    const interceptedOptions = this.requestInterceptor.intercept(requestOptions);
 
     // Debug logging only in development mode
     if (import.meta.env.MODE === 'development') {
@@ -429,20 +455,30 @@ export class EduSphereApiClient implements IApiClient {
       });
     }
 
-    // Execute request with retry logic
+    // Execute request with retry logic and DevTunnel error handling
     return this.retryHandler.executeWithRetry(async () => {
-      const response = await fetch(fullUrl, interceptedOptions);
-      
-      // Debug logging only in development mode
-      if (import.meta.env.MODE === 'development') {
-        console.log('[API CLIENT] Response received:', {
-          status: response.status,
-          statusText: response.statusText,
-          ok: response.ok
-        });
+      try {
+        const response = await fetch(fullUrl, interceptedOptions);
+        
+        // Debug logging only in development mode
+        if (import.meta.env.MODE === 'development') {
+          console.log('[API CLIENT] Response received:', {
+            status: response.status,
+            statusText: response.statusText,
+            ok: response.ok
+          });
+        }
+        
+        return this.responseInterceptor.intercept<T>(response);
+      } catch (error) {
+        // Handle DevTunnel authentication errors specifically
+        if (error instanceof Error && 
+            (error.message.includes('CORS') || error.message.includes('NetworkError')) &&
+            baseUrl.includes('devtunnels.ms')) {
+          throw handleDevTunnelError(error);
+        }
+        throw error;
       }
-      
-      return this.responseInterceptor.intercept<T>(response);
     });
   }
 
@@ -545,6 +581,143 @@ export class EduSphereApiClient implements IApiClient {
    */
   public async getProfileById(userId: string): Promise<User> {
     return this.request<User>(API_ENDPOINTS.AUTH.PROFILE_BY_ID(userId));
+  }
+
+  /**
+   * Handle OAuth callback authentication
+   * @param data - OAuth callback data
+   * @returns Promise resolving to authentication response
+   */
+  public async oauthCallback(data: { code: string; state: string; provider: 'google' | 'github' }): Promise<AuthResponse> {
+    // Debug logging only in development mode
+    if (import.meta.env.MODE === 'development') {
+      console.log('[API CLIENT] OAuth callback attempt:', {
+        endpoint: API_ENDPOINTS.AUTH.OAUTH_CALLBACK,
+        provider: data.provider
+      });
+    }
+
+    try {
+      const response = await this.request<AuthResponse>(API_ENDPOINTS.AUTH.OAUTH_CALLBACK, {
+        method: 'POST',
+        body: data,
+      });
+
+      // Debug logging only in development mode
+      if (import.meta.env.MODE === 'development') {
+        console.log('[API CLIENT] OAuth callback successful:', {
+          userId: response.user?.id,
+          username: response.user?.username
+        });
+      }
+
+      // Store authentication data
+      this.tokenManager.storeToken(response.token);
+      this.tokenManager.storeUser(response.user);
+
+      return response;
+    } catch (error) {
+      // Error logging only in development mode
+      if (import.meta.env.MODE === 'development') {
+        console.error('[API CLIENT] OAuth callback failed:', {
+          error: error instanceof Error ? error.message : 'Unknown error',
+          endpoint: API_ENDPOINTS.AUTH.OAUTH_CALLBACK
+        });
+      }
+      throw error;
+    }
+  }
+
+  /**
+   * Send email verification
+   * @param data - Email verification request data
+   * @returns Promise resolving to verification response
+   */
+  public async sendVerification(data: SendVerificationRequest): Promise<SendVerificationResponse> {
+    return this.request<SendVerificationResponse>(API_ENDPOINTS.AUTH.SEND_VERIFICATION, {
+      method: 'POST',
+      body: data,
+    });
+  }
+
+  /**
+   * Verify email with token
+   * @param data - Email verification data
+   * @returns Promise resolving to verification result
+   */
+  public async verifyEmail(data: VerifyEmailRequest): Promise<VerifyEmailResponse> {
+    return this.request<VerifyEmailResponse>(API_ENDPOINTS.AUTH.VERIFY_EMAIL, {
+      method: 'POST',
+      body: data,
+    });
+  }
+
+  /**
+   * Resend email verification
+   * @param data - Resend verification request data
+   * @returns Promise resolving to resend response
+   */
+  public async resendVerification(data: ResendVerificationRequest): Promise<ResendVerificationResponse> {
+    return this.request<ResendVerificationResponse>(API_ENDPOINTS.AUTH.RESEND_VERIFICATION, {
+      method: 'POST',
+      body: data,
+    });
+  }
+
+  /**
+   * Request password reset
+   * @param data - Forgot password request data
+   * @returns Promise resolving to forgot password response
+   */
+  public async forgotPassword(data: ForgotPasswordRequest): Promise<ForgotPasswordResponse> {
+    return this.request<ForgotPasswordResponse>(API_ENDPOINTS.AUTH.FORGOT_PASSWORD, {
+      method: 'POST',
+      body: data,
+    });
+  }
+
+  /**
+   * Verify reset token validity
+   * @param data - Reset token verification data
+   * @returns Promise resolving to token validation result
+   */
+  public async verifyResetToken(data: VerifyResetTokenRequest): Promise<VerifyResetTokenResponse> {
+    return this.request<VerifyResetTokenResponse>(API_ENDPOINTS.AUTH.VERIFY_RESET_TOKEN, {
+      method: 'POST',
+      body: data,
+    });
+  }
+
+  /**
+   * Reset password with token
+   * @param data - Reset password request data
+   * @returns Promise resolving to reset password response
+   */
+  public async resetPassword(data: ResetPasswordRequest): Promise<ResetPasswordResponse> {
+    const response = await this.request<ResetPasswordResponse>(API_ENDPOINTS.AUTH.RESET_PASSWORD, {
+      method: 'POST',
+      body: data,
+    });
+
+    // Store authentication data if password reset includes login
+    if (response.user) {
+      // Note: Backend should return token if auto-login after reset
+      // this.tokenManager.storeUser(response.user);
+    }
+
+    return response;
+  }
+
+  /**
+   * Change password for authenticated user
+   * @param data - Change password request data
+   * @returns Promise resolving to change password response
+   */
+  public async changePassword(data: ChangePasswordRequest): Promise<ChangePasswordResponse> {
+    return this.request<ChangePasswordResponse>(API_ENDPOINTS.AUTH.CHANGE_PASSWORD, {
+      method: 'POST',
+      body: data,
+    });
   }
 
   /**

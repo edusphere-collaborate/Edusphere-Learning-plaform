@@ -154,7 +154,7 @@ export function LoginForm({ onSuccess }: LoginFormProps) {
             <Link href="/forgot-password">
               <Button
                 variant="link"
-                className="text-sm text-primary-600 hover:text-primary-700"
+                className="text-sm text-blue-600 dark:text-blue-400 hover:text-blue-700 dark:hover:text-blue-300 font-medium hover:underline transition-all duration-200 hover:scale-105"
                 data-testid="link-forgot-password"
               >
                 Forgot password?
@@ -176,18 +176,6 @@ export function LoginForm({ onSuccess }: LoginFormProps) {
       {/* Social Login */}
       <SocialLogin isLoading={isLoading} onSuccess={onSuccess} />
 
-      <p className="text-center text-sm text-gray-600 dark:text-gray-400">
-        Don't have an account?{' '}
-        <Link href="/register">
-          <Button
-            variant="link"
-            className="text-primary-600 hover:text-primary-700 font-medium p-0"
-            data-testid="link-register"
-          >
-            Sign up
-          </Button>
-        </Link>
-      </p>
     </div>
   );
 }

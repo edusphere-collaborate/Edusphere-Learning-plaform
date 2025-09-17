@@ -76,12 +76,13 @@ export default function Rooms() {
   });
 
   /**
-   * Handle room selection from chat list
+   * Handle room selection from chat list - Stay in same layout, no navigation
    */
   const handleRoomSelect = (room: RoomWithLatestMessage) => {
     console.log(`[Rooms] Selected room: ${room.name}`);
     setSelectedRoom(room);
     setRoomMessages([]); // Reset messages when switching rooms
+    // No navigation - keep the clean 3-panel layout
   };
 
   /**
@@ -116,8 +117,10 @@ export default function Rooms() {
   // Show loading state while checking authentication
   if (authLoading) {
     return (
-      <div className="min-h-screen bg-background flex">
-        <Sidebar />
+      <div className="h-screen bg-background flex overflow-hidden">
+        <div className="flex-shrink-0">
+          <Sidebar />
+        </div>
         <div className="flex-1 flex items-center justify-center">
           <div className="animate-spin rounded-full h-32 w-32 border-b-2 border-primary-600"></div>
         </div>
@@ -125,14 +128,16 @@ export default function Rooms() {
     );
   }
 
-  // WhatsApp/Telegram-style three-panel layout
+  // WhatsApp/Telegram-style three-panel layout with fixed height and no main window scrolling
   return (
-    <div className="min-h-screen bg-background flex">
+    <div className="h-screen bg-background flex overflow-hidden">
       {/* Left Sidebar - Navigation */}
-      <Sidebar />
+      <div className="flex-shrink-0">
+        <Sidebar />
+      </div>
       
       {/* Middle Panel - Room Chat List */}
-      <div className="w-80 flex-shrink-0">
+      <div className="w-80 flex-shrink-0 min-w-0 sm:w-72 md:w-80 lg:w-96">
         <RoomChatList
           rooms={rooms}
           selectedRoomId={selectedRoom?.id}
@@ -145,7 +150,7 @@ export default function Rooms() {
       </div>
       
       {/* Right Panel - Chat Interface or Empty State */}
-      <div className="flex-1 flex">
+      <div className="flex-1 min-w-0 flex">
         {selectedRoom ? (
           <RoomChatInterface
             room={selectedRoom}
@@ -161,13 +166,15 @@ export default function Rooms() {
         )}
       </div>
       
-      {/* AI Assistant Panel */}
-      <AIAssistantPanel
-        room={selectedRoom || undefined}
-        messages={roomMessages}
-        isVisible={showAIPanel}
-        onToggle={() => setShowAIPanel(!showAIPanel)}
-      />
+      {/* AI Assistant Panel - Responsive */}
+      <div className="hidden lg:block flex-shrink-0">
+        <AIAssistantPanel
+          room={selectedRoom || undefined}
+          messages={roomMessages}
+          isVisible={showAIPanel}
+          onToggle={() => setShowAIPanel(!showAIPanel)}
+        />
+      </div>
     </div>
   );
 }

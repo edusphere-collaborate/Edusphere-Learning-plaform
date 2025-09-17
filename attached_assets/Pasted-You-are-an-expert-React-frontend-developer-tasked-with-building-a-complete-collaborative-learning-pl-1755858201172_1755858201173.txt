@@ -94,7 +94,7 @@ Success confirmation
 
 New password creation form
 
-3. MAIN DASHBOARD (/dashboard)
+3. MAIN DASHBOARD (/rooms)
 Layout Structure:
 
 Sidebar Navigation: Collapsible menu with icons for Dashboard, My Rooms, Explore, AI Assistant, Profile, Settings
@@ -116,7 +116,7 @@ Recommended rooms based on interests
 Quick actions (Create Room, Join Room, Browse Topics)
 
 4. ROOMS MANAGEMENT SYSTEM
-My Rooms Page (/dashboard/rooms):
+My Rooms Page (/rooms):
 
 Grid/list view toggle
 
@@ -136,7 +136,7 @@ AI assistance status
 
 Join/Leave buttons
 
-Room Creation (/dashboard/create-room):
+Room Creation (/create-room):
 
 Form with fields:
 
@@ -156,7 +156,7 @@ Preview section showing how room will appear
 
 Advanced settings panel
 
-Explore Rooms (/dashboard/explore):
+Explore Rooms (/explore):
 
 Category filters (Mathematics, Science, Literature, etc.)
 
@@ -289,10 +289,10 @@ text
 /                          # Landing page
 /login                     # Authentication
 /register                  # User registration
-/dashboard                 # Main dashboard
-/dashboard/rooms           # My rooms
-/dashboard/explore         # Explore rooms
-/dashboard/create-room     # Create new room
+/rooms                 # Main dashboard
+/rooms           # My rooms
+/explore         # Explore rooms
+/create-room     # Create new room
 /room/:roomId              # Individual room
 /profile                   # User profile
 /profile/edit              # Edit profile

@@ -9,6 +9,14 @@ interface AuthContextType {
   logout: () => void;
   isLoading: boolean;
   isAuthenticated: boolean;
+  // New authentication flows
+  sendVerificationEmail: (email: string) => Promise<{ success: boolean; message?: string; error?: string }>;
+  verifyEmail: (token: string, email?: string) => Promise<{ success: boolean; message?: string; error?: string }>;
+  resendVerificationEmail: (email: string) => Promise<{ success: boolean; message?: string; error?: string }>;
+  forgotPassword: (email: string) => Promise<{ success: boolean; message?: string; error?: string }>;
+  verifyResetToken: (token: string) => Promise<{ success: boolean; message?: string; error?: string }>;
+  resetPassword: (token: string, password: string) => Promise<{ success: boolean; message?: string; error?: string }>;
+  changePassword: (currentPassword: string, newPassword: string) => Promise<{ success: boolean; message?: string; error?: string }>;
 }
 
 const AuthContext = createContext<AuthContextType | undefined>(undefined);
@@ -154,6 +162,127 @@ export function AuthProvider({ children }: { children: React.ReactNode }) {
     setUser(null);
   };
 
+  // Email verification methods
+  const sendVerificationEmail = async (email: string) => {
+    try {
+      const response = await apiClient.sendVerification({ email });
+      return { 
+        success: response.success, 
+        message: response.message,
+        error: response.success ? undefined : response.message 
+      };
+    } catch (error) {
+      console.error('Send verification email failed:', error);
+      return { 
+        success: false, 
+        error: error instanceof Error ? error.message : 'Failed to send verification email' 
+      };
+    }
+  };
+
+  const verifyEmail = async (token: string, email?: string) => {
+    try {
+      const response = await apiClient.verifyEmail({ token, email });
+      return { 
+        success: response.success, 
+        message: response.message,
+        error: response.success ? undefined : response.message 
+      };
+    } catch (error) {
+      console.error('Email verification failed:', error);
+      return { 
+        success: false, 
+        error: error instanceof Error ? error.message : 'Email verification failed' 
+      };
+    }
+  };
+
+  const resendVerificationEmail = async (email: string) => {
+    try {
+      const response = await apiClient.resendVerification({ email });
+      return { 
+        success: response.success, 
+        message: response.message,
+        error: response.success ? undefined : response.message 
+      };
+    } catch (error) {
+      console.error('Resend verification email failed:', error);
+      return { 
+        success: false, 
+        error: error instanceof Error ? error.message : 'Failed to resend verification email' 
+      };
+    }
+  };
+
+  // Password reset methods
+  const forgotPassword = async (email: string) => {
+    try {
+      const response = await apiClient.forgotPassword({ email });
+      return { 
+        success: response.success, 
+        message: response.message,
+        error: response.success ? undefined : response.message 
+      };
+    } catch (error) {
+      console.error('Forgot password failed:', error);
+      return { 
+        success: false, 
+        error: error instanceof Error ? error.message : 'Failed to send password reset email' 
+      };
+    }
+  };
+
+  const verifyResetToken = async (token: string) => {
+    try {
+      const response = await apiClient.verifyResetToken({ token });
+      return { 
+        success: response.success, 
+        message: response.message,
+        error: response.success ? undefined : response.message 
+      };
+    } catch (error) {
+      console.error('Reset token verification failed:', error);
+      return { 
+        success: false, 
+        error: error instanceof Error ? error.message : 'Reset token verification failed' 
+      };
+    }
+  };
+
+  const resetPassword = async (token: string, password: string) => {
+    try {
+      const response = await apiClient.resetPassword({ token, password });
+      return { 
+        success: response.success, 
+        message: response.message,
+        error: response.success ? undefined : response.message 
+      };
+    } catch (error) {
+      console.error('Password reset failed:', error);
+      return { 
+        success: false, 
+        error: error instanceof Error ? error.message : 'Password reset failed' 
+      };
+    }
+  };
+
+  const changePassword = async (currentPassword: string, newPassword: string) => {
+    try {
+      const response = await apiClient.changePassword({ currentPassword, newPassword });
+      return { 
+        success: response.success, 
+        message: response.message,
+        error: response.success ? undefined : response.message 
+      };
+    } catch (error) {
+      console.error('Change password failed:', error);
+      return { 
+        success: false, 
+        error: error instanceof Error ? error.message : 'Failed to change password' 
+      };
+    }
+  };
+
   return (
     <AuthContext.Provider value={{
       user,
@@ -161,7 +290,15 @@ export function AuthProvider({ children }: { children: React.ReactNode }) {
       register,
       logout,
       isLoading,
-      isAuthenticated: !!user
+      isAuthenticated: !!user,
+      // New authentication flows
+      sendVerificationEmail,
+      verifyEmail,
+      resendVerificationEmail,
+      forgotPassword,
+      verifyResetToken,
+      resetPassword,
+      changePassword
     }}>
       {children}
     </AuthContext.Provider>
@@ -179,7 +316,15 @@ export function useAuth() {
       register: async () => ({ success: false, error: 'Auth not available' }),
       logout: () => {},
       isLoading: false,
-      isAuthenticated: false
+      isAuthenticated: false,
+      // Default implementations for new authentication flows
+      sendVerificationEmail: async () => ({ success: false, error: 'Auth not available' }),
+      verifyEmail: async () => ({ success: false, error: 'Auth not available' }),
+      resendVerificationEmail: async () => ({ success: false, error: 'Auth not available' }),
+      forgotPassword: async () => ({ success: false, error: 'Auth not available' }),
+      verifyResetToken: async () => ({ success: false, error: 'Auth not available' }),
+      resetPassword: async () => ({ success: false, error: 'Auth not available' }),
+      changePassword: async () => ({ success: false, error: 'Auth not available' })
     };
   }
   return context;

@@ -222,25 +222,6 @@ export default function Login() {
             <div className="space-y-6 animate-slide-up" style={{animationDelay: '0.2s'}}>
               <div className="glass-effect rounded-2xl p-6 sm:p-8 shadow-xl login-form-element">
                 <LoginForm onSuccess={handleLoginSuccess} />
-                
-                {/* Remember Me & Forgot Password */}
-                <div className="flex items-center justify-between text-sm mt-6">
-                  <label className="flex items-center gap-2 text-gray-600 dark:text-gray-400 cursor-pointer hover:text-gray-800 dark:hover:text-gray-200 transition-colors">
-                    <input
-                      type="checkbox"
-                      className="rounded border-gray-300 dark:border-gray-600 text-blue-600 focus:ring-blue-500 focus:ring-offset-0 dark:focus:ring-offset-gray-900 transition-all duration-200"
-                      aria-label="Remember me"
-                    />
-                    <span>Remember me</span>
-                  </label>
-                  <Link
-                    href="/forgot-password"
-                    className="text-blue-600 dark:text-blue-400 hover:text-blue-700 dark:hover:text-blue-300 font-medium hover:underline transition-all duration-200 hover:scale-105"
-                    data-testid="link-forgot-password"
-                  >
-                    Forgot password?
-                  </Link>
-                </div>
               </div>
 
               {/* Sign Up Link with Enhanced Styling */}

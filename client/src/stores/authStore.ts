@@ -309,18 +309,8 @@ export const useAuthStore = create<AuthState>()(
             throw new Error('Invalid OAuth state parameter');
           }
           
-          // Exchange code for tokens via backend
-          const response = await fetch('/api/auth/oauth/callback', {
-            method: 'POST',
-            headers: { 'Content-Type': 'application/json' },
-            body: JSON.stringify({ code, state, provider })
-          });
-          
-          if (!response.ok) {
-            throw new Error('OAuth authentication failed');
-          }
-          
-          const data = await response.json();
+          // Exchange code for tokens via backend using API client
+          const data = await apiClient.oauthCallback({ code, state, provider });
           
           // Create complete user object
           const oauthUser: User = {

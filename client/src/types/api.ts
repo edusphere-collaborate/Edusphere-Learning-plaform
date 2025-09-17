@@ -645,6 +645,135 @@ export interface IWebSocketManager {
 }
 
 // ============================================================================
+// AUTHENTICATION TYPES
+// ============================================================================
+
+/**
+ * Email verification request interface
+ */
+export interface SendVerificationRequest {
+  email: string;
+}
+
+/**
+ * Email verification response interface
+ */
+export interface SendVerificationResponse {
+  success: boolean;
+  message: string;
+  expiresIn: number; // seconds
+}
+
+/**
+ * Verify email request interface
+ */
+export interface VerifyEmailRequest {
+  token: string;
+  email?: string; // optional for additional validation
+}
+
+/**
+ * Verify email response interface
+ */
+export interface VerifyEmailResponse {
+  success: boolean;
+  message: string;
+  user?: {
+    id: string;
+    email: string;
+    isEmailVerified: boolean;
+  };
+}
+
+/**
+ * Resend verification request interface
+ */
+export interface ResendVerificationRequest {
+  email: string;
+}
+
+/**
+ * Resend verification response interface
+ */
+export interface ResendVerificationResponse {
+  success: boolean;
+  message: string;
+  cooldownSeconds?: number; // if rate limited
+}
+
+/**
+ * Forgot password request interface
+ */
+export interface ForgotPasswordRequest {
+  email: string;
+}
+
+/**
+ * Forgot password response interface
+ */
+export interface ForgotPasswordResponse {
+  success: boolean;
+  message: string; // Always success message for security
+  expiresIn?: number; // only if email exists
+}
+
+/**
+ * Verify reset token request interface
+ */
+export interface VerifyResetTokenRequest {
+  token: string;
+}
+
+/**
+ * Verify reset token response interface
+ */
+export interface VerifyResetTokenResponse {
+  success: boolean;
+  valid: boolean;
+  message?: string;
+  expiresAt?: string;
+  email?: string; // masked email like "j***@example.com"
+}
+
+/**
+ * Reset password request interface
+ */
+export interface ResetPasswordRequest {
+  token: string;
+  password: string;
+}
+
+/**
+ * Reset password response interface
+ */
+export interface ResetPasswordResponse {
+  success: boolean;
+  message: string;
+  user?: {
+    id: string;
+    email: string;
+    passwordChangedAt: string;
+  };
+}
+
+/**
+ * Change password request interface (authenticated)
+ */
+export interface ChangePasswordRequest {
+  currentPassword: string;
+  newPassword: string;
+}
+
+/**
+ * Change password response interface
+ */
+export interface ChangePasswordResponse {
+  success: boolean;
+  message: string;
+  passwordChangedAt: string;
+}
+
+// ============================================================================
 // UTILITY TYPES
 // ============================================================================
 
@@ -694,8 +823,18 @@ export const API_ENDPOINTS = {
   AUTH: {
     REGISTER: '/auth/register',
     LOGIN: '/auth/login',
+    OAUTH_CALLBACK: '/auth/oauth/callback',
     PROFILE: '/auth/profile',
     PROFILE_BY_ID: (id: string) => `/auth/profile/${id}`,
+    // Email verification endpoints
+    SEND_VERIFICATION: '/auth/send-verification',
+    VERIFY_EMAIL: '/auth/verify-email',
+    RESEND_VERIFICATION: '/auth/resend-verification',
+    // Password reset endpoints
+    FORGOT_PASSWORD: '/auth/forgot-password',
+    VERIFY_RESET_TOKEN: '/auth/verify-reset-token',
+    RESET_PASSWORD: '/auth/reset-password',
+    CHANGE_PASSWORD: '/auth/change-password',
   },
   
   // Users
