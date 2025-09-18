@@ -28,8 +28,9 @@ export function SocialLogin({ isLoading = false, onSuccess, flow = 'login', onUs
     
     try {
       // Check if Google OAuth is properly configured
-      if (!oauthConfig.isProviderConfigured('google')) {
-        throw new Error('Google OAuth is not configured. Please set VITE_GOOGLE_CLIENT_ID in your environment variables.');
+      const googleStatus = oauthConfig.getProviderStatus('google');
+      if (!googleStatus.isConfigured) {
+        throw new Error(googleStatus.error || 'Google OAuth configuration error');
       }
 
       // Generate secure OAuth URL with state parameter
@@ -54,8 +55,9 @@ export function SocialLogin({ isLoading = false, onSuccess, flow = 'login', onUs
     
     try {
       // Check if GitHub OAuth is properly configured
-      if (!oauthConfig.isProviderConfigured('github')) {
-        throw new Error('GitHub OAuth is not configured. Please set VITE_GITHUB_CLIENT_ID in your environment variables.');
+      const githubStatus = oauthConfig.getProviderStatus('github');
+      if (!githubStatus.isConfigured) {
+        throw new Error(githubStatus.error || 'GitHub OAuth configuration error');
       }
 
       // Generate secure OAuth URL with state parameter

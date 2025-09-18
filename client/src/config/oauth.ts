@@ -91,7 +91,7 @@ export class OAuthConfig {
 
     // Validate client ID is configured
     if (!config.clientId || config.clientId === 'your_google_client_id_here' || config.clientId === 'your_github_client_id_here') {
-      throw new Error(`OAuth client ID for '${provider}' is not properly configured. Please set VITE_${provider.toUpperCase()}_CLIENT_ID in your environment variables.`);
+      throw new Error(`invalid_credentials`);
     }
 
     // Generate cryptographically secure state parameter with flow information
@@ -205,9 +205,61 @@ export class OAuthConfig {
     // Check if client ID is set and not placeholder
     const isValidClientId = Boolean(config.clientId && 
            config.clientId !== 'your_google_client_id_here' && 
-           config.clientId !== 'your_github_client_id_here');
+           config.clientId !== 'your_github_client_id_here' &&
+           config.clientId.trim().length > 0);
     
     return isValidClientId;
+  }
+
+  /**
+   * Get detailed configuration status for OAuth provider
+   * @param {string} provider - Provider name (google|github)
+   * @returns {Object} Configuration status with error details
+   */
+  public getProviderStatus(provider: string): {
+    isConfigured: boolean;
+    error?: string;
+    clientIdStatus: 'valid' | 'missing' | 'placeholder' | 'empty';
+  } {
+    const config = this.getProvider(provider);
+    
+    if (!config) {
+      return {
+        isConfigured: false,
+        error: `OAuth provider '${provider}' not found`,
+        clientIdStatus: 'missing'
+      };
+    }
+
+    // Check client ID status
+    if (!config.clientId) {
+      return {
+        isConfigured: false,
+        error: `Client ID not set for ${provider}. Please set VITE_${provider.toUpperCase()}_CLIENT_ID in your environment variables.`,
+        clientIdStatus: 'missing'
+      };
+    }
+
+    if (config.clientId === 'your_google_client_id_here' || config.clientId === 'your_github_client_id_here') {
+      return {
+        isConfigured: false,
+        error: `Client ID for ${provider} is still using placeholder value. Please set a valid VITE_${provider.toUpperCase()}_CLIENT_ID.`,
+        clientIdStatus: 'placeholder'
+      };
+    }
+
+    if (config.clientId.trim().length === 0) {
+      return {
+        isConfigured: false,
+        error: `Client ID for ${provider} is empty. Please set a valid VITE_${provider.toUpperCase()}_CLIENT_ID.`,
+        clientIdStatus: 'empty'
+      };
+    }
+
+    return {
+      isConfigured: true,
+      clientIdStatus: 'valid'
+    };
   }
 
   /**
@@ -341,11 +393,17 @@ export enum OAuthError {
 export const OAuthErrorMessages: Record<string, string> = {
   [OAuthError.ACCESS_DENIED]: 'You cancelled the login process',
   [OAuthError.INVALID_REQUEST]: 'Invalid OAuth request',
-  [OAuthError.INVALID_CLIENT]: 'Invalid OAuth client configuration',
+  [OAuthError.INVALID_CLIENT]: 'Invalid OAuth client credentials. Please check your configuration.',
   [OAuthError.INVALID_GRANT]: 'Invalid authorization grant',
-  [OAuthError.UNAUTHORIZED_CLIENT]: 'Unauthorized OAuth client',
+  [OAuthError.UNAUTHORIZED_CLIENT]: 'OAuth client is not authorized for this operation',
   [OAuthError.UNSUPPORTED_GRANT_TYPE]: 'Unsupported grant type',
-  [OAuthError.INVALID_SCOPE]: 'Invalid OAuth scope',
-  [OAuthError.SERVER_ERROR]: 'OAuth server error',
-  [OAuthError.TEMPORARILY_UNAVAILABLE]: 'OAuth service temporarily unavailable',
+  [OAuthError.INVALID_SCOPE]: 'Invalid OAuth scope requested',
+  [OAuthError.SERVER_ERROR]: 'OAuth server error. Please try again later.',
+  [OAuthError.TEMPORARILY_UNAVAILABLE]: 'OAuth service temporarily unavailable. Please try again later.',
+  // Additional credential-specific errors
+  'invalid_client_id': 'Invalid client ID. Please check your OAuth configuration.',
+  'client_not_found': 'OAuth client not found. Please verify your credentials.',
+  'redirect_uri_mismatch': 'Redirect URI mismatch. Please check your OAuth configuration.',
+  'invalid_credentials': 'Invalid OAuth credentials. Please check your client ID and secret.',
+  'configuration_error': 'OAuth configuration error. Please contact support.',
 };

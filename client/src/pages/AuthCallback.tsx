@@ -119,7 +119,16 @@ export default function AuthCallback() {
         // Handle OAuth error responses
         if (oauthError) {
           setState('error');
-          setError(`Authentication failed: ${oauthError}`);
+          const errorMessage = OAuthErrorMessages[oauthError] || `Authentication failed: ${oauthError}`;
+          setError(errorMessage);
+          return;
+        }
+
+        // Check if provider is properly configured before processing
+        const providerStatus = oauthConfig.getProviderStatus(detectedProvider);
+        if (!providerStatus.isConfigured) {
+          setState('error');
+          setError(providerStatus.error || 'OAuth provider not configured properly');
           return;
         }
 
