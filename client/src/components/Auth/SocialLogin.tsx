@@ -26,8 +26,8 @@ export function SocialLogin({ isLoading = false, onSuccess, flow = 'login', onUs
     setGoogleLoading(true);
     
     try {
-      // Get backend API URL
-      const backendUrl = import.meta.env.VITE_API_URL || 'https://edusphere-backend-n1r8.onrender.com';
+      // Get Google OAuth URL from environment
+      const googleAuthUrl = import.meta.env.VITE_GOOGLE_AUTH_URL || 'https://edusphere-backend-n1r8.onrender.com/auth/google';
       const flowText = flow === 'register' ? 'registration' : 'authentication';
       
       toast({ 
@@ -35,8 +35,8 @@ export function SocialLogin({ isLoading = false, onSuccess, flow = 'login', onUs
         description: `You will be redirected to Google for ${flowText}.` 
       });
       
-      // Redirect to backend OAuth endpoint
-      window.location.href = `${backendUrl}/auth/google?flow=${flow}`;
+      // Redirect to backend Google OAuth endpoint
+      window.location.href = `${googleAuthUrl}?flow=${flow}`;
       
     } catch (error: any) {
       toast({
@@ -53,17 +53,17 @@ export function SocialLogin({ isLoading = false, onSuccess, flow = 'login', onUs
     setGithubLoading(true);
     
     try {
-      // Get backend API URL
-      const backendUrl = import.meta.env.VITE_API_URL || 'https://edusphere-backend-n1r8.onrender.com';
+      // Get GitHub OAuth URL from environment
+      const githubAuthUrl = import.meta.env.VITE_GITHUB_AUTH_URL || 'https://edusphere-backend-n1r8.onrender.com/auth/github';
       const flowText = flow === 'register' ? 'registration' : 'authentication';
       
-      toast({
-        title: "Redirecting to GitHub",
-        description: `You will be redirected to GitHub for ${flowText}.`,
+      toast({ 
+        title: "Redirecting to GitHub", 
+        description: `You will be redirected to GitHub for ${flowText}.` 
       });
       
-      // Redirect to backend OAuth endpoint
-      window.location.href = `${backendUrl}/auth/github?flow=${flow}`;
+      // Redirect to backend GitHub OAuth endpoint
+      window.location.href = `${githubAuthUrl}?flow=${flow}`;
       
     } catch (error: any) {
       toast({
@@ -129,7 +129,7 @@ export function useOAuthRedirect() {
 
   /**
    * Handle OAuth redirect from backend with token
-   * Backend redirects to: /auth/success?token=jwt_token&user=encoded_user_data
+   * Backend redirects to: /login/success?token=jwt_token or /auth/success?token=jwt_token&user=encoded_user_data
    */
   const handleOAuthRedirect = () => {
     const urlParams = new URLSearchParams(window.location.search);
@@ -149,38 +149,56 @@ export function useOAuthRedirect() {
       return;
     }
 
-    // Handle successful authentication
-    if (token && userData) {
+    // Handle successful authentication with JWT token
+    if (token) {
       try {
-        // Parse user data
-        const user = JSON.parse(decodeURIComponent(userData));
-        
-        // Store authentication data
+        // Store JWT token for authentication
         localStorage.setItem('sessionId', token);
-        localStorage.setItem('user', JSON.stringify(user));
+        localStorage.setItem('auth_token', token);
         
-        // Show success message
-        toast({
-          title: "Login Successful",
-          description: `Welcome ${user.firstName}! You've successfully logged in.`,
-        });
+        // If user data is provided, store it
+        if (userData) {
+          const user = JSON.parse(decodeURIComponent(userData));
+          localStorage.setItem('user', JSON.stringify(user));
+          
+          // Show success message with user name
+          toast({
+            title: "Login Successful",
+            description: `Welcome ${user.firstName || user.name || 'User'}! You've successfully logged in.`,
+          });
+        } else {
+          // Show generic success message
+          toast({
+            title: "Login Successful",
+            description: "You've successfully logged in with OAuth.",
+          });
+        }
 
         // Redirect to dashboard
-        window.location.href = '/rooms';
+        setTimeout(() => {
+          window.location.href = '/rooms';
+        }, 1500);
         
       } catch (parseError) {
         console.error('Failed to parse user data:', parseError);
+        
+        // Still store the token even if user data parsing fails
+        localStorage.setItem('sessionId', token);
+        localStorage.setItem('auth_token', token);
+        
         toast({
-          title: "Authentication Error",
-          description: 'Failed to process authentication data.',
-          variant: "destructive",
+          title: "Login Successful",
+          description: "Authentication successful. Redirecting to dashboard...",
         });
-        window.location.href = '/login';
+        
+        setTimeout(() => {
+          window.location.href = '/rooms';
+        }, 1500);
       }
     } else {
       toast({
         title: "Authentication Error",
-        description: 'Missing authentication data from backend.',
+        description: 'Missing authentication token from backend.',
         variant: "destructive",
       });
       window.location.href = '/login';

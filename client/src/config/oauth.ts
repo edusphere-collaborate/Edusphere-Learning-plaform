@@ -6,6 +6,28 @@
  * @version 1.0.0
  */
 
+// OAuth Configuration with separate backend redirect URLs
+export const OAUTH_CONFIG = {
+  // Backend URLs
+  backend: {
+    baseUrl: import.meta.env.VITE_BACKEND_URL || 'https://edusphere-backend-n1r8.onrender.com',
+  },
+  
+  // Google OAuth
+  google: {
+    authUrl: import.meta.env.VITE_GOOGLE_AUTH_URL || 'https://edusphere-backend-n1r8.onrender.com/auth/google',
+    redirectUrl: import.meta.env.VITE_GOOGLE_REDIRECT_URL || 'https://edusphere-backend-n1r8.onrender.com/auth/google/redirect',
+    scope: 'openid profile email',
+  },
+  
+  // GitHub OAuth
+  github: {
+    authUrl: import.meta.env.VITE_GITHUB_AUTH_URL || 'https://edusphere-backend-n1r8.onrender.com/auth/github',
+    redirectUrl: import.meta.env.VITE_GITHUB_REDIRECT_URL || 'https://edusphere-backend-n1r8.onrender.com/auth/github/redirect',
+    scope: 'user:email',
+  },
+};
+
 // OAuth provider configuration interface
 interface OAuthProvider {
   clientId: string;
@@ -47,24 +69,23 @@ export class OAuthConfig {
     // Get environment variables with fallback values
     const googleClientId = import.meta.env.VITE_GOOGLE_CLIENT_ID || '';
     const githubClientId = import.meta.env.VITE_GITHUB_CLIENT_ID || '';
-    const redirectUri = import.meta.env.VITE_OAUTH_REDIRECT_URI || 'http://localhost:5174/auth/callback';
 
-    // Google OAuth configuration
+    // Google OAuth configuration - uses backend redirect URL
     this.providers.set('google', {
       clientId: googleClientId,
-      authUrl: 'https://accounts.google.com/o/oauth2/v2/auth',
-      scope: 'openid email profile',
+      authUrl: OAUTH_CONFIG.google.authUrl,
+      scope: OAUTH_CONFIG.google.scope,
       responseType: 'code',
-      redirectUri: redirectUri,
+      redirectUri: OAUTH_CONFIG.google.redirectUrl,
     });
 
-    // GitHub OAuth configuration
+    // GitHub OAuth configuration - uses backend redirect URL
     this.providers.set('github', {
       clientId: githubClientId,
-      authUrl: 'https://github.com/login/oauth/authorize',
-      scope: 'user:email read:user',
+      authUrl: OAUTH_CONFIG.github.authUrl,
+      scope: OAUTH_CONFIG.github.scope,
       responseType: 'code',
-      redirectUri: redirectUri,
+      redirectUri: OAUTH_CONFIG.github.redirectUrl,
     });
   }
 

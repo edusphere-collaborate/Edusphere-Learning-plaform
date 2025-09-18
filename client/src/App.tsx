@@ -43,6 +43,7 @@ function Router() {
       <Route path="/onboarding" component={Onboarding} />
       <Route path="/auth/callback" component={AuthCallback} />
       <Route path="/auth/success" component={AuthSuccess} />
+      <Route path="/login/success" component={AuthSuccess} />
       {/* All Routes - No Authentication Required for Testing */}
       {/* <Route path="/rooms*" component={Dashboard} /> */} {/* Removed dashboard route */}
       <Route path="/create-room" component={CreateRoom} />
