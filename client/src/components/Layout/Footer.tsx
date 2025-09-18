@@ -1,4 +1,5 @@
 import { GraduationCap, Twitter, Linkedin, Github, ArrowUpRight, Heart } from 'lucide-react';
+import EdusphereLogo from '@/assets/Edusphere.png';
 import { Link } from 'wouter';
 
 export function Footer() {
@@ -36,8 +37,12 @@ export function Footer() {
           {/* Company Info - Enhanced */}
           <div className="md:col-span-1">
             <Link href="/" className="group flex items-center space-x-3 mb-6 transition-all duration-300 hover:scale-105" data-testid="footer-logo">
-              <div className="w-10 h-10 bg-gradient-to-br from-primary-500 to-accent-500 rounded-xl flex items-center justify-center group-hover:rotate-12 group-hover:shadow-lg group-hover:shadow-primary-500/25 transition-all duration-300">
-                <GraduationCap className="w-6 h-6 text-white group-hover:scale-110 transition-transform duration-300" />
+              <div className="w-10 h-10 bg-gradient-to-br from-primary-500 to-accent-500 rounded-xl flex items-center justify-center group-hover:rotate-12 group-hover:shadow-lg group-hover:shadow-primary-500/25 transition-all duration-300 p-2">
+                <img 
+                  src={EdusphereLogo} 
+                  alt="Edusphere Logo" 
+                  className="w-full h-full object-contain group-hover:scale-110 transition-transform duration-300"
+                />
               </div>
               <span className="text-2xl font-bold text-white group-hover:text-primary-400 transition-colors duration-300">EduSphere</span>
             </Link>

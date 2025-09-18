@@ -23,6 +23,7 @@ import { Progress } from '@/components/ui/progress';
 import { useAuth } from '@/contexts/AuthContext';
 import { useApiClient } from '@/contexts/AuthContext';
 import { useToast } from '@/hooks/use-toast';
+import EdusphereLogo from '@/assets/Edusphere.png';
 import { 
   GraduationCap, 
   User, 
@@ -191,9 +192,11 @@ export default function Onboarding() {
         {/* Header */}
         <div className="text-center mb-8">
           <div className="flex items-center justify-center space-x-3 mb-4">
-            <div className="w-12 h-12 bg-gradient-to-br from-primary-500 to-accent-500 rounded-lg flex items-center justify-center">
-              <GraduationCap className="w-7 h-7 text-white" />
-            </div>
+            <img 
+              src={EdusphereLogo} 
+              alt="Edusphere Logo" 
+              className="w-12 h-12 rounded-lg object-contain"
+            />
             <span className="text-3xl font-bold text-gray-900 dark:text-white">EduSphere</span>
           </div>
           <h1 className="text-2xl font-bold text-gray-900 dark:text-white mb-2">

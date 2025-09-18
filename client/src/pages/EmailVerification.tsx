@@ -5,6 +5,7 @@ import { Button } from '@/components/ui/button';
 import { Card, CardContent, CardHeader, CardTitle } from '@/components/ui/card';
 import { Alert, AlertDescription } from '@/components/ui/alert';
 import { GraduationCap } from 'lucide-react';
+import EdusphereLogo from '@/assets/Edusphere.png';
 import { useToast } from '@/hooks/use-toast';
 
 export default function EmailVerification() {
@@ -253,9 +254,11 @@ export default function EmailVerification() {
       <div className="w-full max-w-md">
         {/* Logo */}
         <Link href="/" className="flex items-center justify-center space-x-3 mb-8" data-testid="email-verification-logo">
-          <div className="w-10 h-10 bg-gradient-to-br from-primary-500 to-accent-500 rounded-lg flex items-center justify-center">
-            <GraduationCap className="w-6 h-6 text-white" />
-          </div>
+          <img 
+            src={EdusphereLogo} 
+            alt="Edusphere Logo" 
+            className="w-10 h-10 rounded-lg object-contain"
+          />
           <span className="text-2xl font-bold text-gray-900 dark:text-white">Edusphere</span>
         </Link>
 

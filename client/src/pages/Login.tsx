@@ -9,6 +9,7 @@ import {
 import { LoginForm } from "@/components/Forms/LoginForm";
 import { useAuth } from "@/contexts/AuthContext";
 import { GraduationCap } from "lucide-react";
+import EdusphereLogo from '@/assets/Edusphere.png';
 import { Navbar } from "@/components/Layout/Navbar";
 
 // Welcome Back typing animation component
@@ -166,8 +167,12 @@ export default function Login() {
               aria-label="Edusphere Home"
             >
               {/* Large Logo Icon */}
-              <div className="w-24 h-24 bg-white/20 backdrop-blur-sm rounded-2xl flex items-center justify-center group-hover:scale-110 group-hover:bg-white/30 transition-all duration-300 shadow-2xl">
-                <GraduationCap className="w-12 h-12 text-white" />
+              <div className="w-24 h-24 bg-white/20 backdrop-blur-sm rounded-2xl flex items-center justify-center group-hover:scale-110 group-hover:bg-white/30 transition-all duration-300 shadow-2xl p-4">
+                <img 
+                  src={EdusphereLogo} 
+                  alt="Edusphere Logo" 
+                  className="w-full h-full object-contain"
+                />
               </div>
               {/* Logo Name Below */}
               <span className="text-3xl font-bold text-gray-600 drop-shadow-sm group-hover:scale-105 transition-all duration-300 dark:text-gray-300">
@@ -199,8 +204,12 @@ export default function Login() {
                 data-testid="login-logo-mobile"
                 aria-label="Edusphere Home"
               >
-                <div className="w-12 h-12 bg-gradient-to-br from-blue-500 to-blue-600 rounded-xl flex items-center justify-center group-hover:scale-110 transition-all duration-300 shadow-lg">
-                  <GraduationCap className="w-6 h-6 text-white" />
+                <div className="w-12 h-12 bg-gradient-to-br from-blue-500 to-blue-600 rounded-xl flex items-center justify-center group-hover:scale-110 transition-all duration-300 shadow-lg p-2">
+                  <img 
+                    src={EdusphereLogo} 
+                    alt="Edusphere Logo" 
+                    className="w-full h-full object-contain"
+                  />
                 </div>
                 <span className="text-2xl font-bold text-gray-900 dark:text-white">
                   Edusphere
