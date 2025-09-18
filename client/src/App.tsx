@@ -21,6 +21,7 @@ import ResetPassword from "@/pages/ResetPassword";
 import EmailVerification from "@/pages/EmailVerification";
 import Onboarding from "@/pages/Onboarding";
 import AuthCallback from "@/pages/AuthCallback";
+import AuthSuccess from "@/pages/AuthSuccess";
 // import Dashboard from "@/pages/rooms"; // Removed for WhatsApp Web-style layout
 import CreateRoom from "@/pages/CreateRoom";
 import Room from "@/pages/Room";
@@ -41,6 +42,7 @@ function Router() {
       <Route path="/verify-email" component={EmailVerification} />
       <Route path="/onboarding" component={Onboarding} />
       <Route path="/auth/callback" component={AuthCallback} />
+      <Route path="/auth/success" component={AuthSuccess} />
       {/* All Routes - No Authentication Required for Testing */}
       {/* <Route path="/rooms*" component={Dashboard} /> */} {/* Removed dashboard route */}
       <Route path="/create-room" component={CreateRoom} />

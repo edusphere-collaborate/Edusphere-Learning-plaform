@@ -1,7 +1,6 @@
 import { useState } from 'react';
 import { Button } from '@/components/ui/button';
 import { useToast } from '@/hooks/use-toast';
-import { oauthConfig, OAuthErrorMessages } from '@/config/oauth';
 import { GoogleIcon, GitHubIcon } from '@/components/icons';
 
 interface SocialLoginProps {
@@ -22,22 +21,22 @@ export function SocialLogin({ isLoading = false, onSuccess, flow = 'login', onUs
   const [githubLoading, setGithubLoading] = useState(false);
   const { toast } = useToast();
 
-  // Handle Google OAuth login with proper configuration
+  // Handle Google OAuth login via backend
   const handleGoogleLogin = async () => {
     setGoogleLoading(true);
     
     try {
-      // Check if Google OAuth is properly configured
-      const googleStatus = oauthConfig.getProviderStatus('google');
-      if (!googleStatus.isConfigured) {
-        throw new Error(googleStatus.error || 'Google OAuth configuration error');
-      }
-
-      // Generate secure OAuth URL with state parameter
-      const authUrl = oauthConfig.generateAuthUrl('google', flow);
+      // Get backend API URL
+      const backendUrl = import.meta.env.VITE_API_URL || 'https://edusphere-backend-n1r8.onrender.com';
       const flowText = flow === 'register' ? 'registration' : 'authentication';
-      toast({ title: "Redirecting to Google", description: `You will be redirected to Google for ${flowText}.` });
-      window.location.href = authUrl;    
+      
+      toast({ 
+        title: "Redirecting to Google", 
+        description: `You will be redirected to Google for ${flowText}.` 
+      });
+      
+      // Redirect to backend OAuth endpoint
+      window.location.href = `${backendUrl}/auth/google?flow=${flow}`;
       
     } catch (error: any) {
       toast({
@@ -49,29 +48,22 @@ export function SocialLogin({ isLoading = false, onSuccess, flow = 'login', onUs
     }
   };
 
-  // Handle GitHub OAuth login with proper configuration
+  // Handle GitHub OAuth login via backend
   const handleGithubLogin = async () => {
     setGithubLoading(true);
     
     try {
-      // Check if GitHub OAuth is properly configured
-      const githubStatus = oauthConfig.getProviderStatus('github');
-      if (!githubStatus.isConfigured) {
-        throw new Error(githubStatus.error || 'GitHub OAuth configuration error');
-      }
-
-      // Generate secure OAuth URL with state parameter
-      const authUrl = oauthConfig.generateAuthUrl('github', flow);
-      
-      // Show loading toast
+      // Get backend API URL
+      const backendUrl = import.meta.env.VITE_API_URL || 'https://edusphere-backend-n1r8.onrender.com';
       const flowText = flow === 'register' ? 'registration' : 'authentication';
+      
       toast({
         title: "Redirecting to GitHub",
         description: `You will be redirected to GitHub for ${flowText}.`,
       });
       
-      // Redirect to GitHub OAuth
-      window.location.href = authUrl;
+      // Redirect to backend OAuth endpoint
+      window.location.href = `${backendUrl}/auth/github?flow=${flow}`;
       
     } catch (error: any) {
       toast({
@@ -131,127 +123,69 @@ export function SocialLogin({ isLoading = false, onSuccess, flow = 'login', onUs
   );
 }
 
-// Hook for handling OAuth callback with enhanced security
-export function useOAuthCallback() {
+// Hook for handling OAuth redirect from backend
+export function useOAuthRedirect() {
   const { toast } = useToast();
 
   /**
-   * Handle OAuth callback with proper state validation and error handling
-   * @param {string} provider - OAuth provider (google|github)
-   * @param {Function} onSuccess - Success callback function
+   * Handle OAuth redirect from backend with token
+   * Backend redirects to: /auth/success?token=jwt_token&user=encoded_user_data
    */
-  const handleOAuthCallback = (provider: 'google' | 'github', onSuccess?: () => void) => {
-    // Parse callback URL parameters
-    const callbackData = oauthConfig.parseCallbackUrl(window.location.href);
-    const { code, state, error, errorDescription } = callbackData;
+  const handleOAuthRedirect = () => {
+    const urlParams = new URLSearchParams(window.location.search);
+    const token = urlParams.get('token');
+    const userData = urlParams.get('user');
+    const error = urlParams.get('error');
 
-    // Handle OAuth errors
+    // Handle OAuth errors from backend
     if (error) {
-      const errorMessage = OAuthErrorMessages[error] || errorDescription || `Authentication failed: ${error}`;
-      toast({
-        title: `${provider.charAt(0).toUpperCase() + provider.slice(1)} Login Failed`,
-        description: errorMessage,
-        variant: "destructive",
-      });
-      return;
-    }
-
-    // Validate authorization code is present
-    if (!code) {
-      toast({
-        title: `${provider.charAt(0).toUpperCase() + provider.slice(1)} Login Failed`,
-        description: 'No authorization code received from OAuth provider',
-        variant: "destructive",
-      });
-      return;
-    }
-
-    // Validate state parameter for CSRF protection
-    if (!state || !oauthConfig.validateState(provider, state)) {
-      toast({
-        title: "Security Error",
-        description: 'Invalid state parameter. This may be a security issue.',
-        variant: "destructive",
-      });
-      return;
-    }
-
-    // Exchange authorization code for tokens
-    exchangeCodeForTokens(provider, code, state, onSuccess);
-  };
-
-  /**
-   * Exchange authorization code for access tokens via backend API
-   * @param {string} provider - OAuth provider name
-   * @param {string} code - Authorization code from OAuth callback
-   * @param {string} state - State parameter for validation
-   * @param {Function} onSuccess - Success callback function
-   */
-  const exchangeCodeForTokens = async (
-    provider: string, 
-    code: string, 
-    state: string, 
-    onSuccess?: () => void
-  ) => {
-    try {
-      // Get API base URL from environment
-      const apiUrl = import.meta.env.VITE_API_URL || 'http://localhost:3000';
-      
-      // Make secure API call to exchange code for tokens
-      const response = await fetch(`${apiUrl}/api/auth/${provider}/callback`, {
-        method: 'POST',
-        headers: {
-          'Content-Type': 'application/json',
-          'Accept': 'application/json',
-        },
-        credentials: 'include', // Include cookies for session management
-        body: JSON.stringify({ 
-          code, 
-          state,
-          redirectUri: import.meta.env.VITE_OAUTH_REDIRECT_URI || 'http://localhost:5174/auth/callback'
-        }),
-      });
-
-      // Handle non-200 responses
-      if (!response.ok) {
-        const errorData = await response.json().catch(() => ({ message: 'OAuth callback failed' }));
-        throw new Error(errorData.message || `HTTP ${response.status}: OAuth callback failed`);
-      }
-
-      // Parse successful response
-      const data = await response.json();
-      
-      // Store authentication data securely
-      if (data.sessionId) {
-        localStorage.setItem('sessionId', data.sessionId);
-      }
-      if (data.user) {
-        localStorage.setItem('user', JSON.stringify(data.user));
-      }
-      
-      // Show success message
-      toast({
-        title: "Login Successful",
-        description: `Welcome! You've successfully logged in with ${provider.charAt(0).toUpperCase() + provider.slice(1)}.`,
-      });
-
-      // Execute success callback or redirect to dashboard
-      if (onSuccess) {
-        onSuccess();
-      } else {
-        window.location.href = '/rooms';
-      }
-      
-    } catch (error: any) {
-      console.error(`OAuth ${provider} callback error:`, error);
-      
       toast({
         title: "Authentication Failed",
-        description: error.message || 'Failed to complete OAuth login. Please try again.',
+        description: decodeURIComponent(error),
         variant: "destructive",
       });
+      // Redirect to login page
+      window.location.href = '/login';
+      return;
+    }
+
+    // Handle successful authentication
+    if (token && userData) {
+      try {
+        // Parse user data
+        const user = JSON.parse(decodeURIComponent(userData));
+        
+        // Store authentication data
+        localStorage.setItem('sessionId', token);
+        localStorage.setItem('user', JSON.stringify(user));
+        
+        // Show success message
+        toast({
+          title: "Login Successful",
+          description: `Welcome ${user.firstName}! You've successfully logged in.`,
+        });
+
+        // Redirect to dashboard
+        window.location.href = '/rooms';
+        
+      } catch (parseError) {
+        console.error('Failed to parse user data:', parseError);
+        toast({
+          title: "Authentication Error",
+          description: 'Failed to process authentication data.',
+          variant: "destructive",
+        });
+        window.location.href = '/login';
+      }
+    } else {
+      toast({
+        title: "Authentication Error",
+        description: 'Missing authentication data from backend.',
+        variant: "destructive",
+      });
+      window.location.href = '/login';
     }
   };
 
-  return { handleOAuthCallback };
+  return { handleOAuthRedirect };
 }

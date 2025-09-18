@@ -3,10 +3,6 @@
   "outputDirectory": "dist",
   "rewrites": [
     {
-      "source": "/auth/callback",
-      "destination": "https://edusphere-backend-n1r8.onrender.com/auth/callback"
-    },
-    {
       "source": "/(.*)",
       "destination": "/index.html"
     }
