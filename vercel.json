@@ -1,5 +1,5 @@
 {
-  "buildCommand": "cd client && npm run build && cp -r dist ../dist",
+  "buildCommand": "npm install --prefix client && npm run build --prefix client && cp -r client/dist ./dist",
   "outputDirectory": "dist",
   "rewrites": [
     {
