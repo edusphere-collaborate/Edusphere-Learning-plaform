@@ -5,11 +5,11 @@
   "license": "MIT",
   "description": "EduSphere - Collaborative Learning Platform Frontend",
   "scripts": {
-    "dev": "cd client && vite",
-    "build": "cd client && vite build",
-    "start": "cd client && vite",
-    "preview": "cd client && vite preview",
-    "check": "cd client && tsc"
+    "dev": "vite",
+    "build": "vite build",
+    "start": "vite",
+    "preview": "vite preview",
+    "check": "tsc"
   },
   "dependencies": {
     "@hookform/resolvers": "^3.10.0",
