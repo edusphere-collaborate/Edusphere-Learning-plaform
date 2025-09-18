@@ -2,6 +2,7 @@ import { StrictMode } from "react";
 import { createRoot } from "react-dom/client";
 import App from "./App";
 import "./index.css";
+import { SpeedInsights } from "@vercel/speed-insights/react"
 
 // Suppress development warnings in console
 if (process.env.NODE_ENV === 'development') {
@@ -47,6 +48,8 @@ if (process.env.NODE_ENV === 'development') {
 
 createRoot(document.getElementById("root")!).render(
   <StrictMode>
-    <App />
+    <SpeedInsights/>
+      <App />
+
   </StrictMode>
 );
