@@ -67,13 +67,11 @@ export function Navbar() {
           <div className="flex justify-between items-center">
             {/* Logo */}
             <Link href="/" className="flex items-center space-x-3 group" data-testid="logo-link">
-              <div className="w-10 h-10 bg-gradient-to-br from-blue-500 via-blue-600 to-indigo-600 rounded-xl flex items-center justify-center shadow-lg group-hover:shadow-xl transition-all duration-300 group-hover:scale-105 p-2">
-                <img 
-                  src={EdusphereLogo} 
-                  alt="Edusphere Logo" 
-                  className="w-full h-full object-contain"
-                />
-              </div>
+              <img 
+                src={EdusphereLogo} 
+                alt="Edusphere Logo" 
+                className="w-10 h-10 object-contain group-hover:scale-105 transition-all duration-300"
+              />
               <span className="text-2xl font-bold bg-gradient-to-r from-gray-900 to-gray-700 dark:from-white dark:to-gray-300 bg-clip-text text-transparent">
                 Edusphere
               </span>
@@ -194,13 +192,11 @@ export function Navbar() {
         {/* Header */}
         <div className="flex items-center justify-between px-6 py-4 border-b border-gray-200 dark:border-gray-700">
           <div className="flex items-center space-x-3">
-            <div className="w-9 h-9 bg-gradient-to-br from-blue-500 via-blue-600 to-indigo-600 rounded-xl flex items-center justify-center shadow-lg p-2">
-              <img 
-                src={EdusphereLogo} 
-                alt="Edusphere Logo" 
-                className="w-full h-full object-contain"
-              />
-            </div>
+            <img 
+              src={EdusphereLogo} 
+              alt="Edusphere Logo" 
+              className="w-9 h-9 object-contain"
+            />
             <span className="text-xl font-bold text-gray-800 dark:text-gray-100">
               Edusphere
             </span>

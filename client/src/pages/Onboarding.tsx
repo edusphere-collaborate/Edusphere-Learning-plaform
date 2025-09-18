@@ -195,7 +195,7 @@ export default function Onboarding() {
             <img 
               src={EdusphereLogo} 
               alt="Edusphere Logo" 
-              className="w-12 h-12 rounded-lg object-contain"
+              className="w-16 h-16 object-contain"
             />
             <span className="text-3xl font-bold text-gray-900 dark:text-white">EduSphere</span>
           </div>

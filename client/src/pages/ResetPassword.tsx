@@ -176,7 +176,7 @@ export default function ResetPassword() {
           <img 
             src={EdusphereLogo} 
             alt="Edusphere Logo" 
-            className="w-10 h-10 rounded-lg object-contain"
+            className="w-16 h-16 object-contain"
           />
           <span className="text-2xl font-bold text-gray-900 dark:text-white">Edusphere</span>
         </Link>

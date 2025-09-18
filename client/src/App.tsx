@@ -11,6 +11,7 @@ import { WebSocketProvider } from "@/contexts/WebSocketContext";
 import { AIWidget } from "@/components/AI/AIWidget";
 import { initializeStores } from "@/stores/storeInitializer";
 import { useAppStore } from "@/stores/appStore";
+import { SpeedInsights } from "@vercel/speed-insights/react";
 import NotFound from "@/pages/not-found";
 import Landing from "@/pages/Landing";
 import Login from "@/pages/Login";
@@ -93,6 +94,7 @@ function App() {
                 )}
                 <Router />
                 <AIWidget />
+                <SpeedInsights />
               </TooltipProvider>
             </WebSocketProvider>
           </RoomProvider>
