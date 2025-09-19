@@ -387,7 +387,7 @@ export function AIAssistantPanel({
                 className={`max-w-[80%] p-3 rounded-lg ${
                   m.type === 'user'
                     ? 'bg-primary-500 text-white'
-                    : 'bg-gray-100 dark:bg-gray-800 text-gray-900'
+                    : 'bg-gray-100 dark:bg-gray-800 text-gray-900 dark:text-white'
                 }`}
               >
                 <p className="text-sm whitespace-pre-wrap">{m.content}</p>
