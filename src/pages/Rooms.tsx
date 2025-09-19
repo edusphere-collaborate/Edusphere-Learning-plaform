@@ -168,39 +168,42 @@ export default function Rooms() {
       <div className="flex-shrink-0">
         <Sidebar />
       </div>
-      
-      {/* Middle Panel - Room Chat List */}
-      <div className="w-80 flex-shrink-0 min-w-0 sm:w-72 md:w-80 lg:w-96">
-        <RoomChatList
-          rooms={rooms}
-          selectedRoomId={selectedRoom?.id}
-          onRoomSelect={handleRoomSelect}
-          onRoomAction={handleRoomAction}
-          searchQuery={searchQuery}
-          onSearchChange={setSearchQuery}
-          isLoading={roomsLoading}
-        />
-      </div>
-      
-      {/* Right Panel - Chat Interface or Empty State */}
-      <div className="flex-1 min-w-0 flex">
-        {selectedRoom ? (
-          <RoomChatInterface
-            room={selectedRoom}
-            onClose={() => setSelectedRoom(null)}
+  
+      {/* Middle - Room list + Chat interface */}
+      <div className="flex flex-1 min-w-0">
+        {/* Room List */}
+        <div className="w-80 flex-shrink-0 min-w-0 sm:w-72 md:w-80 lg:w-96 border-r">
+          <RoomChatList
+            rooms={rooms}
+            selectedRoomId={selectedRoom?.id}
+            onRoomSelect={handleRoomSelect}
             onRoomAction={handleRoomAction}
-            onMessagesChange={handleMessagesChange}
+            searchQuery={searchQuery}
+            onSearchChange={setSearchQuery}
+            isLoading={roomsLoading}
           />
-        ) : (
-          <ChatEmptyState
-            onCreateRoom={handleCreateRoom}
-            onExploreRooms={handleExploreRooms}
-          />
-        )}
+        </div>
+  
+        {/* Chat Interface or Empty State */}
+        <div className="flex-1 min-w-0 flex">
+          {selectedRoom ? (
+            <RoomChatInterface
+              room={selectedRoom}
+              onClose={() => setSelectedRoom(null)}
+              onRoomAction={handleRoomAction}
+              onMessagesChange={handleMessagesChange}
+            />
+          ) : (
+            <ChatEmptyState
+              onCreateRoom={handleCreateRoom}
+              onExploreRooms={handleExploreRooms}
+            />
+          )}
+        </div>
       </div>
-      
-      {/* AI Assistant Panel - Responsive */}
-      <div className="hidden lg:block flex-shrink-0">
+  
+      {/* Right - AI Assistant */}
+      <div className="hidden lg:flex flex-shrink-0 h-full">
         <AIAssistantPanel
           room={selectedRoom || undefined}
           messages={roomMessages}

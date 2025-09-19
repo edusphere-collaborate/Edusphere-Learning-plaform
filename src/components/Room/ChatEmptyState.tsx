@@ -1,6 +1,7 @@
 import React from 'react';
 import { MessageCircle, Users, Zap, BookOpen } from 'lucide-react';
 import { Button } from '@/components/ui/button';
+import chatImage from '@/assets/chat.jpg';
 
 /**
  * Props for ChatEmptyState component
@@ -18,13 +19,14 @@ export function ChatEmptyState({ onCreateRoom, onExploreRooms }: ChatEmptyStateP
   return (
     <div className="flex-1 flex items-center justify-center bg-gray-50 dark:bg-gray-900/50">
       <div className="text-center max-w-md px-6">
-        {/* Icon */}
-        <div className="relative mb-6">
-          <div className="w-20 h-20 bg-gradient-to-br from-primary-500 to-accent-500 rounded-full flex items-center justify-center mx-auto mb-4">
-            <MessageCircle className="w-10 h-10 text-white" />
-          </div>
-          <div className="absolute -top-2 -right-2 w-8 h-8 bg-blue-500 rounded-full flex items-center justify-center">
-            <Zap className="w-4 h-4 text-white" />
+        {/* Chat Image */}
+        <div className="relative mb-8">
+          <div className="w-64 h-64 mx-auto mb-6 rounded-3xl overflow-hidden shadow-2xl">
+            <img 
+              src={chatImage} 
+              alt="Chat illustration" 
+              className="w-full h-full object-cover"
+            />
           </div>
         </div>
 

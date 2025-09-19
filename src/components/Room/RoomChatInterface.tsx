@@ -663,10 +663,10 @@ export function RoomChatInterface({ room, onClose, onRoomAction, onMessagesChang
       )}
 
       {/* Messages Area - Scrollable */}
-      <div className="flex-1 flex overflow-hidden">
+      <div className="flex-1 flex overflow-hidden h-full">
         {/* Messages */}
-        <div className="flex-1 flex flex-col min-h-0">
-          <div className="flex-1 overflow-y-auto overflow-x-hidden p-4">
+        <div className="flex-1 flex flex-col min-h-0 h-full">
+          <div className="flex-1 overflow-y-auto overflow-x-hidden p-4 h-full">
             {/* Show access error if user doesn't have permission */}
             {messagesError && (
               <div className="flex items-center justify-center h-full">
@@ -835,187 +835,151 @@ export function RoomChatInterface({ room, onClose, onRoomAction, onMessagesChang
           </div>
         </div>
 
-        {/* Message Input - Fixed at Bottom - Only show if user has access */}
-        {!messagesError && (
-          <div className="flex-shrink-0 p-4 border-t border-gray-200 dark:border-gray-700 bg-white dark:bg-gray-900">
-            <div className="flex items-end space-x-3">
-              {/* Attachment Button */}
-              <input
-                type="file"
-                id="file-upload"
-                className="hidden"
-                multiple
-                accept="image/*,video/*,.pdf,.doc,.docx,.txt"
-                onChange={handleFileUpload}
-              />
-              <Button
-                variant="ghost"
-                size="sm"
-                className={cn(
-                  "h-9 w-9 p-0 flex-shrink-0 hover:bg-gray-100 dark:hover:bg-gray-700",
-                  uploadingFiles.length > 0 && "animate-pulse bg-blue-100 dark:bg-blue-900"
-                )}
-                onClick={() => document.getElementById('file-upload')?.click()}
-                title="Upload files"
-                disabled={uploadingFiles.length > 0}
-              >
-                <Paperclip className="w-4 h-4" />
-              </Button>
+        {/* Room Info Sidebar (when expanded) */}
+        {showRoomInfo && (
+          <div className="w-80 border-l border-gray-200 dark:border-gray-700 bg-gray-50 dark:bg-gray-800/50 h-full flex flex-col">
+            <div className="p-4 flex-1 overflow-y-auto">
+              <h3 className="font-semibold text-gray-900 dark:text-white mb-4">Room Info</h3>
 
-              {/* Message Input */}
-              <div className="flex-1 relative">
-                <Input
-                  ref={inputRef}
-                  placeholder="Type your message here..."
-                  value={messageInput}
-                  onChange={(e) => {
-                    setMessageInput(e.target.value);
-                    handleTypingStart();
-                  }}
-                  onBlur={handleTypingStop}
-                  onKeyPress={handleKeyPress}
-                  className="pr-10 resize-none"
-                  disabled={sendMessageMutation.isPending}
-                  accept="image/*,video/*,.pdf,.doc,.docx,.txt"
-                  onChange={handleFileUpload}
-                />
-                <Button
-                  variant="ghost"
-                  size="sm"
-                  className={cn(
-                    "h-9 w-9 p-0 flex-shrink-0 hover:bg-gray-100 dark:hover:bg-gray-700",
-                    uploadingFiles.length > 0 && "animate-pulse bg-blue-100 dark:bg-blue-900"
-                  )}
-                  onClick={() => document.getElementById('file-upload')?.click()}
-                  title="Upload files"
-                  disabled={uploadingFiles.length > 0}
-                >
-                  <Paperclip className="w-4 h-4" />
-                </Button>
-
-                {/* Message Input */}
-                <div className="flex-1 relative">
-                  <Input
-                    ref={inputRef}
-                    placeholder="Type your message here..."
-                    value={messageInput}
-                    onChange={(e) => {
-                      setMessageInput(e.target.value);
-                      handleTypingStart();
-                    }}
-                    onBlur={handleTypingStop}
-                    onKeyPress={handleKeyPress}
-                    className="pr-10 resize-none"
-                    disabled={sendMessageMutation.isPending}
-                  />
-
-                  {/* Emoji Button */}
-                  <Popover open={showEmojiPicker} onOpenChange={setShowEmojiPicker}>
-                    <PopoverTrigger asChild>
-                      <Button
-                        variant="ghost"
-                        size="sm"
-                        className="absolute right-2 top-1/2 transform -translate-y-1/2 h-6 w-6 p-0 hover:bg-gray-100 dark:hover:bg-gray-700"
-                        type="button"
-                      >
-                        <Smile className="w-4 h-4 text-gray-400 hover:text-gray-600 dark:hover:text-gray-300" />
-                      </Button>
-                    </PopoverTrigger>
-                    <PopoverContent
-                      side="top"
-                      align="end"
-                      className="w-auto p-0 border-0 shadow-lg"
-                      sideOffset={8}
-                    >
-                      <EmojiPicker
-                        onEmojiSelect={handleEmojiSelect}
-                        onClose={() => setShowEmojiPicker(false)}
-                      />
-                    </PopoverContent>
-                  </Popover>
+              {/* Room Details */}
+              <div className="space-y-4">
+                <div>
+                  <label className="text-sm font-medium text-gray-700 dark:text-gray-300">Description</label>
+                  <p className="text-sm text-gray-600 dark:text-gray-400 mt-1">
+                    {room.description || 'No description provided'}
+                  </p>
                 </div>
 
-                {/* Code Block Button */}
-                <Button
-                  variant="ghost"
-                  size="sm"
-                  className="h-9 w-9 p-0 flex-shrink-0 hover:bg-gray-100 dark:hover:bg-gray-700"
-                  onClick={() => {
-                    const cursorPos = inputRef.current?.selectionStart || 0;
-                    const textBefore = messageInput.substring(0, cursorPos);
-                    const textAfter = messageInput.substring(cursorPos);
-                    const codeBlock = '\n```\n\n```\n';
-                    const newText = textBefore + codeBlock + textAfter;
-                    setMessageInput(newText);
-                    // Set cursor position inside code block
-                    setTimeout(() => {
-                      if (inputRef.current) {
-                        const newCursorPos = cursorPos + 5; // Position after ```\n
-                        inputRef.current.setSelectionRange(newCursorPos, newCursorPos);
-                        inputRef.current.focus();
-                      }
-                    }, 0);
-                  }}
-                  title="Insert code block"
-                >
-                  <Code className="w-4 h-4" />
-                </Button>
+                <div>
+                  <label className="text-sm font-medium text-gray-700 dark:text-gray-300">Subject</label>
+                  <p className="text-sm text-gray-600 dark:text-gray-400 mt-1">
+                    {room.subject || 'General'}
+                  </p>
+                </div>
 
-                {/* Send Button */}
-                <Button
-                  onClick={handleSendMessage}
-                  disabled={!messageInput.trim() || sendMessageMutation.isPending}
-                  className="h-9 w-9 p-0 flex-shrink-0 bg-primary-600 hover:bg-primary-700"
-                >
-                  <Send className="w-4 h-4" />
-                </Button>
+                <div>
+                  <label className="text-sm font-medium text-gray-700 dark:text-gray-300">Members</label>
+                  <div className="mt-2 space-y-2">
+                    <div className="text-sm text-gray-500 dark:text-gray-400">
+                      {memberCount} {memberCount === 1 ? 'member' : 'members'} in this room
+                    </div>
+                    <p className="text-xs text-gray-500 dark:text-gray-500 mt-2">
+                      Member list not available - using room count
+                    </p>
+                  </div>
+                </div>
               </div>
             </div>
           </div>
         )}
-
-
-
-
-            {/* Room Info Sidebar (when expanded) */}
-            {showRoomInfo && (
-              <div className="w-80 border-l border-gray-200 dark:border-gray-700 bg-gray-50 dark:bg-gray-800/50">
-                <div className="p-4">
-                  <h3 className="font-semibold text-gray-900 dark:text-white mb-4">Room Info</h3>
-
-                  {/* Room Details */}
-                  <div className="space-y-4">
-                    <div>
-                      <label className="text-sm font-medium text-gray-700 dark:text-gray-300">Description</label>
-                      <p className="text-sm text-gray-600 dark:text-gray-400 mt-1">
-                        {room.description || 'No description provided'}
-                      </p>
-                    </div>
-
-                    <div>
-                      <label className="text-sm font-medium text-gray-700 dark:text-gray-300">Subject</label>
-                      <p className="text-sm text-gray-600 dark:text-gray-400 mt-1">
-                        {room.subject || 'General'}
-                      </p>
-                    </div>
-
-                    <div>
-                      <label className="text-sm font-medium text-gray-700 dark:text-gray-300">Members</label>
-                      <div className="mt-2 space-y-2">
-                        <div className="text-sm text-gray-500 dark:text-gray-400">
-                          {memberCount} {memberCount === 1 ? 'member' : 'members'} in this room
-                        </div>
-                        <p className="text-xs text-gray-500 dark:text-gray-500 mt-2">
-                          Member list not available - using room count
-                        </p>
-                      </div>
-                    </div>
-                  </div>
-                </div>
-              </div>
-            )}
       </div>
-    </div>
-    )}
-        
 
+      {/* Message Input - Fixed at Bottom - Only show if user has access */}
+      {!messagesError && (
+        <div className="flex-shrink-0 p-4 border-t border-gray-200 dark:border-gray-700 bg-white dark:bg-gray-900">
+          <div className="flex items-end space-x-3">
+            {/* Attachment Button */}
+            <input
+              type="file"
+              id="file-upload"
+              className="hidden"
+              multiple
+              accept="image/*,video/*,.pdf,.doc,.docx,.txt"
+              onChange={handleFileUpload}
+            />
+            <Button
+              variant="ghost"
+              size="sm"
+              className={cn(
+                "h-9 w-9 p-0 flex-shrink-0 hover:bg-gray-100 dark:hover:bg-gray-700",
+                uploadingFiles.length > 0 && "animate-pulse bg-blue-100 dark:bg-blue-900"
+              )}
+              onClick={() => document.getElementById('file-upload')?.click()}
+              title="Upload files"
+              disabled={uploadingFiles.length > 0}
+            >
+              <Paperclip className="w-4 h-4" />
+            </Button>
+
+            {/* Message Input */}
+            <div className="flex-1 relative">
+              <Input
+                ref={inputRef}
+                placeholder="Type your message here..."
+                value={messageInput}
+                onChange={(e) => {
+                  setMessageInput(e.target.value);
+                  handleTypingStart();
+                }}
+                onBlur={handleTypingStop}
+                onKeyPress={handleKeyPress}
+                className="pr-10 resize-none"
+                disabled={sendMessageMutation.isPending}
+              />
+
+              {/* Emoji Button */}
+              <Popover open={showEmojiPicker} onOpenChange={setShowEmojiPicker}>
+                <PopoverTrigger asChild>
+                  <Button
+                    variant="ghost"
+                    size="sm"
+                    className="absolute right-2 top-1/2 transform -translate-y-1/2 h-6 w-6 p-0 hover:bg-gray-100 dark:hover:bg-gray-700"
+                    type="button"
+                  >
+                    <Smile className="w-4 h-4 text-gray-400 hover:text-gray-600 dark:hover:text-gray-300" />
+                  </Button>
+                </PopoverTrigger>
+                <PopoverContent
+                  side="top"
+                  align="end"
+                  className="w-auto p-0 border-0 shadow-lg"
+                  sideOffset={8}
+                >
+                  <EmojiPicker
+                    onEmojiSelect={handleEmojiSelect}
+                    onClose={() => setShowEmojiPicker(false)}
+                  />
+                </PopoverContent>
+              </Popover>
+            </div>
+
+            {/* Code Block Button */}
+            <Button
+              variant="ghost"
+              size="sm"
+              className="h-9 w-9 p-0 flex-shrink-0 hover:bg-gray-100 dark:hover:bg-gray-700"
+              onClick={() => {
+                const cursorPos = inputRef.current?.selectionStart || 0;
+                const textBefore = messageInput.substring(0, cursorPos);
+                const textAfter = messageInput.substring(cursorPos);
+                const codeBlock = '\n```\n\n```\n';
+                const newText = textBefore + codeBlock + textAfter;
+                setMessageInput(newText);
+                // Set cursor position inside code block
+                setTimeout(() => {
+                  if (inputRef.current) {
+                    const newCursorPos = cursorPos + 5; // Position after ```\n
+                    inputRef.current.setSelectionRange(newCursorPos, newCursorPos);
+                    inputRef.current.focus();
+                  }
+                }, 0);
+              }}
+              title="Insert code block"
+            >
+              <Code className="w-4 h-4" />
+            </Button>
+
+            {/* Send Button */}
+            <Button
+              onClick={handleSendMessage}
+              disabled={!messageInput.trim() || sendMessageMutation.isPending}
+              className="h-9 w-9 p-0 flex-shrink-0 bg-primary-600 hover:bg-primary-700"
+            >
+              <Send className="w-4 h-4" />
+            </Button>
+          </div>
+        </div>
+      )}
+    </div>
+  );
+};
