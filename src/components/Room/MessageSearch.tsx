@@ -14,7 +14,7 @@ import { Input } from '@/components/ui/input';
 import { Badge } from '@/components/ui/badge';
 import { Card, CardContent } from '@/components/ui/card';
 import { DropdownMenu, DropdownMenuContent, DropdownMenuItem, DropdownMenuTrigger } from '@/components/ui/dropdown-menu';
-import { Message, User as UserType } from '@/types/api';
+import { Message, PublicUser } from '@/types/api';
 import { formatDistanceToNow } from 'date-fns';
 
 /**
@@ -30,7 +30,7 @@ interface SearchFilters {
  * Search result interface with highlighting
  */
 interface SearchResult {
-  message: Message & { user: UserType };
+  message: Message & { user: PublicUser };
   matchIndex: number;
   snippet: string;
   highlights: Array<{ start: number; end: number }>;
@@ -40,11 +40,11 @@ interface SearchResult {
  * Props interface for MessageSearch component
  */
 interface MessageSearchProps {
-  messages: Array<Message & { user: UserType }>;
+  messages: Array<Message & { user: PublicUser }>;
   isOpen: boolean;
   onClose: () => void;
   onMessageSelect: (messageId: string) => void;
-  currentUser: UserType;
+  currentUser: PublicUser;
 }
 
 /**

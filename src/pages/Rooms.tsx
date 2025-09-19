@@ -47,27 +47,60 @@ export default function Rooms() {
     }
   }, [user, authLoading]);
 
-  // Fetch user's joined rooms with latest message data
+  // Fetch user's joined rooms with latest message data - only rooms user has joined
   const { data: rooms = [], isLoading: roomsLoading } = useQuery({
-    queryKey: ['rooms-with-messages'],
+    queryKey: ['rooms-with-messages', user?.id],
     queryFn: async () => {
-      console.log('[Rooms] Fetching joined rooms with latest messages');
+      console.log('[Rooms] Fetching user joined rooms with latest messages');
       const response = await RoomService.getJoinedRooms();
       if (!response.success) {
         throw new Error(response.error?.message || 'Failed to fetch rooms');
       }
       
-      // Transform rooms to include chat-style metadata
-      const roomsWithMessages: RoomWithLatestMessage[] = (response.data || []).map(room => ({
-        ...room,
-        latestMessage: undefined, // TODO: Fetch latest message from API
-        unreadCount: Math.floor(Math.random() * 5), // TODO: Get real unread count
-        isPinned: false, // TODO: Get from user preferences
-        isMuted: false, // TODO: Get from user preferences
-        isOnline: Math.random() > 0.5, // TODO: Get real online status
-      }));
+      // Only show rooms the user has actually joined
+      const joinedRooms = response.data || [];
+      console.log(`[Rooms] User has joined ${joinedRooms.length} rooms`);
       
-      console.log(`[Rooms] Fetched ${roomsWithMessages.length} rooms`);
+      // Transform rooms to include chat-style metadata with real data
+      const roomsWithMessages: RoomWithLatestMessage[] = await Promise.all(
+        joinedRooms.map(async (room) => {
+          try {
+            // Fetch unread message count for this room
+            const unreadResponse = await RoomService.getUnreadCount(room.id);
+            const unreadCount = unreadResponse.success ? unreadResponse.data?.count || 0 : 0;
+
+            // Get user preferences for this room (pin/mute status)
+            const preferencesResponse = await RoomService.getRoomPreferences(room.id);
+            const preferences = preferencesResponse.success ? preferencesResponse.data : null;
+
+            // Check if room has active users (online status)
+            const activeUsersResponse = await RoomService.getActiveUsers(room.id);
+            const isOnline = activeUsersResponse.success && (activeUsersResponse.data?.length || 0) > 0;
+
+            return {
+              ...room,
+              latestMessage: undefined, // TODO: Fetch latest message from API
+              unreadCount,
+              isPinned: preferences?.isPinned || false,
+              isMuted: preferences?.isMuted || false,
+              isOnline,
+            };
+          } catch (error) {
+            console.error(`[Rooms] Failed to fetch metadata for room ${room.id}:`, error);
+            // Fallback to default values on error
+            return {
+              ...room,
+              latestMessage: undefined,
+              unreadCount: 0,
+              isPinned: false,
+              isMuted: false,
+              isOnline: false,
+            };
+          }
+        })
+      );
+      
+      console.log(`[Rooms] Displaying ${roomsWithMessages.length} accessible rooms`);
       return roomsWithMessages;
     },
     enabled: !!user,

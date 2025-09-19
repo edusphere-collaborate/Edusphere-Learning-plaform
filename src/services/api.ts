@@ -366,6 +366,56 @@ export class RoomService {
   static async getJoinedRooms(): Promise<ServiceResponse<Room[]>> {
     return withErrorHandling(() => apiClient.getJoinedRooms());
   }
+
+  /**
+   * Get unread message count for a specific room
+   * @param roomId - Room ID to get unread count for
+   * @returns Service response with unread count data
+   */
+  static async getUnreadCount(roomId: string): Promise<ServiceResponse<{ count: number }>> {
+    return withErrorHandling(async () => {
+      // Since this endpoint doesn't exist in the backend yet, return 0 for now
+      // TODO: Implement actual unread count API endpoint
+      console.log(`[RoomService] Getting unread count for room ${roomId} - using fallback`);
+      return { count: 0 };
+    });
+  }
+
+  /**
+   * Get user preferences for a specific room (pin/mute status)
+   * @param roomId - Room ID to get preferences for
+   * @returns Service response with room preferences
+   */
+  static async getRoomPreferences(roomId: string): Promise<ServiceResponse<{ isPinned: boolean; isMuted: boolean }>> {
+    return withErrorHandling(async () => {
+      // Since this endpoint doesn't exist in the backend yet, return default values
+      // TODO: Implement actual room preferences API endpoint
+      console.log(`[RoomService] Getting preferences for room ${roomId} - using fallback`);
+      return { isPinned: false, isMuted: false };
+    });
+  }
+
+  /**
+   * Get active users in a specific room
+   * @param roomId - Room ID to get active users for
+   * @returns Service response with active users array
+   */
+  static async getActiveUsers(roomId: string): Promise<ServiceResponse<PublicUser[]>> {
+    return withErrorHandling(async () => {
+      try {
+        // Use existing getRoomById to get room members as a proxy for active users
+        const detailedRoom = await apiClient.getRoomById(roomId);
+        console.log(`[RoomService] Getting active users for room ${roomId} - using room members`);
+        
+        // For now, consider all room members as "active"
+        // TODO: Implement actual active users tracking with WebSocket presence
+        return detailedRoom.users || [];
+      } catch (error) {
+        console.error(`[RoomService] Failed to get active users for room ${roomId}:`, error);
+        return [];
+      }
+    });
+  }
 }
 
 // ============================================================================
