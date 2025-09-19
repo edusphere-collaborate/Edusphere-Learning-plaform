@@ -353,109 +353,117 @@ export function AIAssistantPanel({
       </div>
 
       {!isMinimized && (
-        <Tabs value={activeTab} onValueChange={setActiveTab} className="flex-1 flex flex-col">
-        <TabsList className="grid w-full grid-cols-3 m-2">
+        <Tabs value={activeTab} onValueChange={setActiveTab} className="flex-1 flex flex-col min-h-0">
+        <TabsList className="grid w-full grid-cols-3 m-2 flex-shrink-0">
           <TabsTrigger value="chat" className="text-xs">Chat</TabsTrigger>
           <TabsTrigger value="suggestions" className="text-xs">Suggestions</TabsTrigger>
           <TabsTrigger value="history" className="text-xs">History</TabsTrigger>
         </TabsList>
       
         {/* Chat */}
-        <TabsContent value="chat" className="flex flex-col flex-1 h-full">
-          {/* Scrollable messages */}
-          <ScrollArea className="flex-1 p-3">
-            <div className="space-y-3">
-              {aiMessages.map(m => (
-                <div key={m.id} className={`flex ${m.type === 'user' ? 'justify-end' : 'justify-start'}`}>
-                  <div className={`max-w-[80%] p-3 rounded-lg ${
-                    m.type === 'user'
-                      ? 'bg-primary-500 text-white'
-                      : 'bg-gray-100 dark:bg-gray-800 text-gray-900'
-                  }`}>
-                    <p className="text-sm whitespace-pre-wrap">{m.content}</p>
-                    <p className="text-xs opacity-70 mt-1">{formatTime(m.timestamp)}</p>
-                  </div>
-                </div>
-              ))}
-              {sendAIMessageMutation.isPending && (
-                <div className="flex justify-start">
-                  <div className="bg-gray-100 p-3 rounded-lg flex items-center space-x-2">
-                    <RefreshCw className="w-4 h-4 animate-spin" />
-                    <span className="text-sm">Thinking...</span>
-                  </div>
-                </div>
-              )}
-              <div ref={aiMessagesEndRef} />
-            </div>
-          </ScrollArea>
-      
-          {/* Fixed input */}
-          <div className="p-3 border-t shrink-0">
-            <div className="flex space-x-2">
-              <Input
-                ref={aiInputRef}
-                placeholder="Ask AI..."
-                value={aiInput}
-                onChange={e => setAiInput(e.target.value)}
-                onKeyPress={handleAIKeyPress}
-              />
-              <Button onClick={handleSendAIMessage} disabled={!aiInput.trim()}>
-                <Send className="w-4 h-4" />
-              </Button>
-            </div>
+        <TabsContent value="chat" className="flex flex-col flex-1 min-h-0">
+  {/* Scrollable messages */}
+  <ScrollArea className="flex-1 min-h-0 p-3">
+    <div className="space-y-3">
+      {aiMessages.map(m => (
+        <div key={m.id} className={`flex ${m.type === 'user' ? 'justify-end' : 'justify-start'}`}>
+          <div
+            className={`max-w-[80%] p-3 rounded-lg ${
+              m.type === 'user'
+                ? 'bg-primary-500 text-white'
+                : 'bg-gray-100 dark:bg-gray-800 text-gray-900'
+            }`}
+          >
+            <p className="text-sm whitespace-pre-wrap">{m.content}</p>
+            <p className="text-xs opacity-70 mt-1">{formatTime(m.timestamp)}</p>
           </div>
-        </TabsContent>
+        </div>
+      ))}
+
+      {sendAIMessageMutation.isPending && (
+        <div className="flex justify-start">
+          <div className="bg-gray-100 p-3 rounded-lg flex items-center space-x-2">
+            <RefreshCw className="w-4 h-4 animate-spin" />
+            <span className="text-sm">Thinking...</span>
+          </div>
+        </div>
+      )}
+      <div ref={aiMessagesEndRef} />
+    </div>
+  </ScrollArea>
+
+  {/* Fixed input */}
+  <div className="p-3 border-t flex-shrink-0">
+    <div className="flex space-x-2">
+      <Input
+        ref={aiInputRef}
+        placeholder="Ask AI..."
+        value={aiInput}
+        onChange={e => setAiInput(e.target.value)}
+        onKeyPress={handleAIKeyPress}
+      />
+      <Button onClick={handleSendAIMessage} disabled={!aiInput.trim()}>
+        <Send className="w-4 h-4" />
+      </Button>
+    </div>
+  </div>
+</TabsContent>
+
       
         {/* Suggestions */}
-        <TabsContent value="suggestions" className="flex flex-col flex-1 h-full">
-          <ScrollArea className="flex-1 p-3">
-            <div className="space-y-3">
-              {suggestions.map(s => (
-                <Card
-                  key={s.id}
-                  onClick={() => s.action ? s.action() : setAiInput(s.content)}
-                  className="cursor-pointer hover:shadow-md"
-                >
-                  <CardContent className="p-3">
-                    <h4 className="font-medium text-sm">{s.title}</h4>
-                    <p className="text-xs text-gray-600">{s.content}</p>
-                    <Badge className="mt-2 text-xs">
-                      {Math.round(s.confidence * 100)}% confidence
-                    </Badge>
-                  </CardContent>
-                </Card>
-              ))}
-            </div>
-          </ScrollArea>
-        </TabsContent>
-      
-        {/* History */}
-        <TabsContent value="history" className="flex flex-col flex-1 h-full">
-          <ScrollArea className="flex-1 p-3">
-            {conversationHistory.length === 0 ? (
-              <p className="text-xs text-gray-500">No conversation history.</p>
-            ) : (
-              <div className="space-y-2">
-                {conversationHistory.map(conv => (
-                  <Card key={conv.id}>
-                    <CardContent className="p-2 text-xs">
-                      <p className="font-medium">{conv.roomName}</p>
-                      <p>{conv.messages.length} messages</p>
-                      <p>Updated: {new Date(conv.updatedAt).toLocaleString()}</p>
+        <TabsContent value="suggestions" className="flex flex-col flex-1 min-h-0">
+          <div className="flex-1 min-h-0 overflow-hidden">
+            <ScrollArea className="h-full p-3">
+              <div className="space-y-3">
+                {suggestions.map(s => (
+                  <Card
+                    key={s.id}
+                    onClick={() => s.action ? s.action() : setAiInput(s.content)}
+                    className="cursor-pointer hover:shadow-md"
+                  >
+                    <CardContent className="p-3">
+                      <h4 className="font-medium text-sm">{s.title}</h4>
+                      <p className="text-xs text-gray-600">{s.content}</p>
+                      <Badge className="mt-2 text-xs">
+                        {Math.round(s.confidence * 100)}% confidence
+                      </Badge>
                     </CardContent>
                   </Card>
                 ))}
-                <Button
-                  variant="outline"
-                  size="sm"
-                  className="w-full mt-2"
-                  onClick={clearConversationHistory}
-                >
-                  <Trash2 className="w-3 h-3 mr-1" /> Clear All
-                </Button>
               </div>
-            )}
-          </ScrollArea>
+            </ScrollArea>
+          </div>
+        </TabsContent>
+      
+        {/* History */}
+        <TabsContent value="history" className="flex flex-col flex-1 min-h-0">
+          <div className="flex-1 min-h-0 overflow-hidden">
+            <ScrollArea className="h-full p-3">
+              {conversationHistory.length === 0 ? (
+                <p className="text-xs text-gray-500">No conversation history.</p>
+              ) : (
+                <div className="space-y-2">
+                  {conversationHistory.map(conv => (
+                    <Card key={conv.id}>
+                      <CardContent className="p-2 text-xs">
+                        <p className="font-medium">{conv.roomName}</p>
+                        <p>{conv.messages.length} messages</p>
+                        <p>Updated: {new Date(conv.updatedAt).toLocaleString()}</p>
+                      </CardContent>
+                    </Card>
+                  ))}
+                  <Button
+                    variant="outline"
+                    size="sm"
+                    className="w-full mt-2"
+                    onClick={clearConversationHistory}
+                  >
+                    <Trash2 className="w-3 h-3 mr-1" /> Clear All
+                  </Button>
+                </div>
+              )}
+            </ScrollArea>
+          </div>
         </TabsContent>
       </Tabs>
       

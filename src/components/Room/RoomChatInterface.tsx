@@ -118,25 +118,24 @@ export function RoomChatInterface({ room, onClose, onRoomAction, onMessagesChang
   /**
    * Fetch detailed room data to get accurate member count
    */
-  const { data: detailedRoom } = useQuery({
-    queryKey: ['room-details', room.id],
-    queryFn: async () => {
-      try {
-        const response = await apiClient.getRoomById(room.id);
-        console.log(`[RoomChatInterface] Fetched room details with ${response.users?.length || 0} members for room ${room.id}`);
-        return response;
-      } catch (error: any) {
-        console.error(`[RoomChatInterface] Failed to fetch room details for ${room.id}:`, error);
-        return null;
-      }
-    },
-    enabled: !!room.id && !!user,
-    refetchInterval: 30000, // Refresh room details every 30 seconds
-    retry: 1
-  });
+  // const { data: detailedRoom } = useQuery({
+  //   queryKey: ['room-details', room.id],
+  //   queryFn: async () => {
+  //     try {
+  //       const response = await apiClient.getRoomById(room.id);
+  //       console.log(`[RoomChatInterface] Fetched room details with ${response.users?.length || 0} members for room ${room.id}`);
+  //       return response;
+  //     } catch (error: any) {
+  //       console.error(`[RoomChatInterface] Failed to fetch room details for ${room.id}:`, error);
+  //       return null;
+  //     }
+  //   },
+  //   enabled: !!room.id && !!user,
+  //   refetchInterval: 30000, // Refresh room details every 30 seconds
+  //   retry: 1
+  // });
 
   // Use actual member count from detailed room data, fallback to room properties if needed
-  const memberCount = detailedRoom?.users?.length || room.userCount || room.memberCount || 0;
 
   /**
    * Send message mutation - with room access validation
@@ -528,16 +527,10 @@ export function RoomChatInterface({ room, onClose, onRoomAction, onMessagesChang
               {room.name}
             </h3>
             <div className="flex items-center space-x-2">
-              <span className="text-sm text-gray-500 dark:text-gray-400">
-                {memberCount} {memberCount === 1 ? 'member' : 'members'}
-              </span>
               {room.subject && (
-                <>
-                  <span className="text-gray-300 dark:text-gray-600">•</span>
-                  <Badge variant="secondary" className="text-xs">
-                    {room.subject}
-                  </Badge>
-                </>
+                <Badge variant="secondary" className="text-xs">
+                  {room.subject}
+                </Badge>
               )}
             </div>
           </div>
@@ -857,17 +850,8 @@ export function RoomChatInterface({ room, onClose, onRoomAction, onMessagesChang
                   </p>
                 </div>
 
-                <div>
-                  <label className="text-sm font-medium text-gray-700 dark:text-gray-300">Members</label>
-                  <div className="mt-2 space-y-2">
-                    <div className="text-sm text-gray-500 dark:text-gray-400">
-                      {memberCount} {memberCount === 1 ? 'member' : 'members'} in this room
-                    </div>
-                    <p className="text-xs text-gray-500 dark:text-gray-500 mt-2">
-                      Member list not available - using room count
-                    </p>
-                  </div>
-                </div>
+                
+               
               </div>
             </div>
           </div>
