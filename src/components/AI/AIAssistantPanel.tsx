@@ -17,6 +17,7 @@ import {
   Search,
   Trash2,
 } from 'lucide-react';
+import eduSphereImage from '@/assets/Edusphere.png';
 import { Room, Message, User } from '@/types/api';
 import { Button } from '@/components/ui/button';
 import { Input } from '@/components/ui/input';
@@ -365,30 +366,47 @@ export function AIAssistantPanel({
   {/* Scrollable messages */}
   <ScrollArea className="flex-1 min-h-0 p-3">
     <div className="space-y-3">
-      {aiMessages.map(m => (
-        <div key={m.id} className={`flex ${m.type === 'user' ? 'justify-end' : 'justify-start'}`}>
-          <div
-            className={`max-w-[80%] p-3 rounded-lg ${
-              m.type === 'user'
-                ? 'bg-primary-500 text-white'
-                : 'bg-gray-100 dark:bg-gray-800 text-gray-900'
-            }`}
-          >
-            <p className="text-sm whitespace-pre-wrap">{m.content}</p>
-            <p className="text-xs opacity-70 mt-1">{formatTime(m.timestamp)}</p>
+      {aiMessages.length === 0 ? (
+        <div className="flex flex-col items-center justify-center h-full py-8">
+          <div className="w-20 h-20 mb-4 opacity-30">
+            <img 
+              src={eduSphereImage} 
+              alt="EduSphere" 
+              className="w-full h-full object-contain"
+            />
           </div>
+          <p className="text-sm text-gray-500 dark:text-gray-400 text-center">
+            Ask me anything about the conversation
+          </p>
         </div>
-      ))}
+      ) : (
+        <>
+          {aiMessages.map(m => (
+            <div key={m.id} className={`flex ${m.type === 'user' ? 'justify-end' : 'justify-start'}`}>
+              <div
+                className={`max-w-[80%] p-3 rounded-lg ${
+                  m.type === 'user'
+                    ? 'bg-primary-500 text-white'
+                    : 'bg-gray-100 dark:bg-gray-800 text-gray-900'
+                }`}
+              >
+                <p className="text-sm whitespace-pre-wrap">{m.content}</p>
+                <p className="text-xs opacity-70 mt-1">{formatTime(m.timestamp)}</p>
+              </div>
+            </div>
+          ))}
 
-      {sendAIMessageMutation.isPending && (
-        <div className="flex justify-start">
-          <div className="bg-gray-100 p-3 rounded-lg flex items-center space-x-2">
-            <RefreshCw className="w-4 h-4 animate-spin" />
-            <span className="text-sm">Thinking...</span>
-          </div>
-        </div>
+          {sendAIMessageMutation.isPending && (
+            <div className="flex justify-start">
+              <div className="bg-gray-100 p-3 rounded-lg flex items-center space-x-2">
+                <RefreshCw className="w-4 h-4 animate-spin" />
+                <span className="text-sm">Thinking...</span>
+              </div>
+            </div>
+          )}
+          <div ref={aiMessagesEndRef} />
+        </>
       )}
-      <div ref={aiMessagesEndRef} />
     </div>
   </ScrollArea>
 
@@ -418,7 +436,15 @@ export function AIAssistantPanel({
                 {suggestions.map(s => (
                   <Card
                     key={s.id}
-                    onClick={() => s.action ? s.action() : setAiInput(s.content)}
+                    onClick={() => {
+                      if (s.action) {
+                        s.action();
+                      } else {
+                        setAiInput(s.content);
+                      }
+                      setActiveTab('chat');
+                      aiInputRef.current?.focus();
+                    }}
                     className="cursor-pointer hover:shadow-md"
                   >
                     <CardContent className="p-3">
@@ -436,13 +462,13 @@ export function AIAssistantPanel({
         </TabsContent>
       
         {/* History */}
-        <TabsContent value="history" className="flex flex-col flex-1 min-h-0">
+        <TabsContent value="history" className="flex  ">
           <div className="flex-1 min-h-0 overflow-hidden">
             <ScrollArea className="h-full p-3">
               {conversationHistory.length === 0 ? (
                 <p className="text-xs text-gray-500">No conversation history.</p>
               ) : (
-                <div className="space-y-2">
+                <div className="space-y-8">
                   {conversationHistory.map(conv => (
                     <Card key={conv.id}>
                       <CardContent className="p-2 text-xs">
