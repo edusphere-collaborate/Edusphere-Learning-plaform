@@ -131,15 +131,18 @@ const CreateRoomForm: React.FC = () => {
         creatorId: data.creatorId
       });
       
-      // Only send properties that the backend expects
+      // Only send essential properties to prevent data overload
       const requestBody = {
-        name: data.name,
-        slug: data.slug,
-        description: data.description || '',
+        name: data.name.trim(),
+        slug: data.slug.trim(),
+        description: data.description?.trim() || '',
         creatorId: data.creatorId
       };
       
-      const response = await authenticatedFetch('/api/rooms', {
+      console.log('[CREATE ROOM] Request payload size:', JSON.stringify(requestBody).length, 'bytes');
+      console.log('[CREATE ROOM] Sanitized payload:', requestBody);
+      
+      const response = await authenticatedFetch('/rooms', {
         method: 'POST',
         headers: {
           'Content-Type': 'application/json',
@@ -148,11 +151,24 @@ const CreateRoomForm: React.FC = () => {
       });
       
       if (!response.ok) {
-        const errorData = await response.json();
-        throw new Error(errorData.message || 'Failed to create room');
+        let errorMessage = 'Failed to create room';
+        try {
+          const errorData = await response.json();
+          errorMessage = errorData.message || errorMessage;
+        } catch (parseError) {
+          console.error('[CREATE ROOM] Failed to parse error response:', parseError);
+          errorMessage = `HTTP ${response.status}: ${response.statusText}`;
+        }
+        throw new Error(errorMessage);
       }
       
-      const room = await response.json();
+      let room;
+      try {
+        room = await response.json();
+      } catch (parseError) {
+        console.error('[CREATE ROOM] Failed to parse success response:', parseError);
+        throw new Error('Room created but response format is invalid');
+      }
       console.log('[CREATE ROOM] Room created successfully:', room);
       return room;
     },
@@ -167,8 +183,8 @@ const CreateRoomForm: React.FC = () => {
         duration: 5000,
       });
       
-      // Navigate to the newly created room
-      setLocation(`/room/${room.id}`);
+      // Navigate to the rooms list page
+      setLocation('/rooms');
     },
     onError: (error: any) => {
       console.error('[CREATE ROOM] Error:', error);
@@ -224,31 +240,19 @@ const CreateRoomForm: React.FC = () => {
 
   return (
     <div className="max-w-4xl mx-auto p-6">
-      {/* Professional Header Section */}
-      <div className="text-center mb-8">
-        <div className="inline-flex items-center justify-center w-16 h-16 bg-gradient-to-br from-blue-500 to-blue-600 rounded-2xl mb-4">
-          <BookOpen className="w-8 h-8 text-white" />
-        </div>
-        <h1 className="text-3xl font-bold text-gray-900 dark:text-white mb-2">
-          Create Learning Room
-        </h1>
-        <p className="text-lg text-gray-600 dark:text-gray-300 max-w-2xl mx-auto">
-          Start a new collaborative learning space where knowledge meets community
-        </p>
-      </div>
       
-      {/* Professional Form Card */}
-      <Card className="border-0 shadow-xl bg-white/80 dark:bg-gray-800/80 backdrop-blur-sm">
-        <CardHeader className="pb-6">
-          <div className="flex items-center gap-3">
-            <div className="w-10 h-10 bg-blue-100 dark:bg-blue-900 rounded-lg flex items-center justify-center">
-              <Settings className="w-5 h-5 text-blue-600 dark:text-blue-400" />
+      {/* Enhanced Form Card */}
+      <Card className="border-0 shadow-2xl bg-white/90 dark:bg-gray-800/90 backdrop-blur-md rounded-2xl overflow-hidden">
+        <CardHeader className="pb-8 bg-gradient-to-r from-blue-50 to-indigo-50 dark:from-blue-900/20 dark:to-indigo-900/20">
+          <div className="flex items-center gap-4">
+            <div className="w-12 h-12 bg-gradient-to-br from-blue-500 to-indigo-600 rounded-xl flex items-center justify-center shadow-lg">
+              <Settings className="w-6 h-6 text-white" />
             </div>
             <div>
-              <CardTitle className="text-xl font-semibold text-gray-900 dark:text-white">
+              <CardTitle className="text-2xl font-bold text-gray-900 dark:text-white">
                 Room Configuration
               </CardTitle>
-              <p className="text-sm text-gray-500 dark:text-gray-400 mt-1">
+              <p className="text-base text-gray-600 dark:text-gray-300 mt-1">
                 Configure your learning space with professional settings
               </p>
             </div>
@@ -258,10 +262,12 @@ const CreateRoomForm: React.FC = () => {
           <Form {...form}>
             <form onSubmit={form.handleSubmit(onSubmit)} className="space-y-8">
               {/* Basic Information */}
-              <Card>
-                <CardHeader>
-                  <CardTitle className="flex items-center space-x-2">
-                    <BookOpen className="w-5 h-5" />
+              <Card className="border-2 border-blue-100 dark:border-blue-800 shadow-md">
+                <CardHeader className="bg-gradient-to-r from-blue-50 to-blue-100 dark:from-blue-900/30 dark:to-blue-800/30">
+                  <CardTitle className="flex items-center space-x-3 text-lg">
+                    <div className="w-8 h-8 bg-blue-500 rounded-lg flex items-center justify-center">
+                      <BookOpen className="w-4 h-4 text-white" />
+                    </div>
                     <span>Basic Information</span>
                   </CardTitle>
                 </CardHeader>
@@ -349,10 +355,12 @@ const CreateRoomForm: React.FC = () => {
               </Card>
 
               {/* Room Settings */}
-              <Card className="border-2">
-                <CardHeader>
-                  <CardTitle className="text-lg flex items-center gap-2">
-                    <Settings className="h-5 w-5" />
+              <Card className="border-2 border-indigo-100 dark:border-indigo-800 shadow-md">
+                <CardHeader className="bg-gradient-to-r from-indigo-50 to-indigo-100 dark:from-indigo-900/30 dark:to-indigo-800/30">
+                  <CardTitle className="text-lg flex items-center gap-3">
+                    <div className="w-8 h-8 bg-indigo-500 rounded-lg flex items-center justify-center">
+                      <Settings className="h-4 w-4 text-white" />
+                    </div>
                     Room Settings
                   </CardTitle>
                 </CardHeader>
@@ -424,10 +432,12 @@ const CreateRoomForm: React.FC = () => {
               </Card>
 
               {/* Room Preview Section */}
-              <Card>
-                <CardHeader>
-                  <CardTitle className="flex items-center gap-2">
-                    <BookOpen className="h-5 w-5" />
+              <Card className="border-2 border-green-100 dark:border-green-800 shadow-md">
+                <CardHeader className="bg-gradient-to-r from-green-50 to-green-100 dark:from-green-900/30 dark:to-green-800/30">
+                  <CardTitle className="flex items-center gap-3">
+                    <div className="w-8 h-8 bg-green-500 rounded-lg flex items-center justify-center">
+                      <BookOpen className="h-4 w-4 text-white" />
+                    </div>
                     Room Preview
                   </CardTitle>
                 </CardHeader>
@@ -505,7 +515,7 @@ const CreateRoomForm: React.FC = () => {
                 <Button
                   type="submit"
                   size="lg"
-                  className="flex-1 h-12 bg-gradient-to-r from-blue-600 to-purple-600 hover:from-blue-700 hover:to-purple-700"
+                  className="flex-1 h-12 bg-blue-600 hover:bg-blue-700 text-white font-semibold shadow-lg hover:shadow-xl transition-all duration-200"
                   disabled={createRoomMutation.isPending || !form.formState.isValid}
                 >
                   {createRoomMutation.isPending ? (

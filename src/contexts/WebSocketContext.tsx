@@ -133,9 +133,17 @@ export function WebSocketProvider({
         return;
       }
 
-      // Construct WebSocket URL with proper error handling
+      // Construct WebSocket URL with proper protocol handling
       try {
-        wsUrl = `${url}?userId=${encodeURIComponent(user.id)}&token=${encodeURIComponent(token)}`;
+        // Convert HTTP/HTTPS URLs to WebSocket protocols
+        let baseWsUrl = url;
+        if (url.startsWith('https://')) {
+          baseWsUrl = url.replace('https://', 'wss://');
+        } else if (url.startsWith('http://')) {
+          baseWsUrl = url.replace('http://', 'ws://');
+        }
+        
+        wsUrl = `${baseWsUrl}?userId=${encodeURIComponent(user.id)}&token=${encodeURIComponent(token)}`;
         console.log('[WebSocket] Attempting connection to:', wsUrl.replace(/token=[^&]+/, 'token=[REDACTED]'));
       } catch (urlError) {
         console.error('[WebSocket] Failed to construct WebSocket URL:', urlError);
@@ -426,11 +434,14 @@ export function WebSocketProvider({
     return () => statusListeners.current.delete(callback);
   }, []);
 
-  // Auto-connect when user is available
+  // Auto-connect when user is available - disabled for backends without WebSocket support
   useEffect(() => {
-    if (user && !isConnected) {
-      connect();
-    }
+    // Temporarily disable WebSocket auto-connection until backend supports it
+    // if (user && !isConnected) {
+    //   connect();
+    // }
+    
+    console.log('[WebSocket] Auto-connection disabled - backend does not support WebSocket');
     
     return () => {
       disconnect();

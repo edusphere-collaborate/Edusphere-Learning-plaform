@@ -117,6 +117,15 @@ export function AIChat({ isWidget = false, roomId }: AIChatProps) {
 
   const chatMutation = useMutation({
     mutationFn: async (prompt: string) => {
+      // Add user message immediately
+      const userMessage: AIMessage = {
+        id: `user-${Date.now()}`,
+        role: 'user',
+        content: prompt,
+        timestamp: new Date()
+      };
+      setMessages(prev => [...prev, userMessage]);
+
       // Prepare context for AI
       const context: any = {};
       
@@ -133,19 +142,57 @@ export function AIChat({ isWidget = false, roomId }: AIChatProps) {
         }
       }
 
-      const response = await apiRequest('POST', '/api/ai/chat', {
-        prompt: generateAIPrompt(prompt, context),
-        roomId: context.roomId,
-        context
+      // Debug authentication
+      const token = localStorage.getItem('sessionId') || sessionStorage.getItem('sessionId');
+      console.log('Auth token exists:', !!token);
+      console.log('User ID:', user?.id);
+      console.log('User authenticated:', !!user);
+      
+      if (!token || !user?.id) {
+        throw new Error('User not authenticated - missing token or user ID');
+      }
+      
+      const response = await apiRequest('POST', '/ai/aiquery', {
+        userId: user.id,
+        query: prompt
       });
+      
+      console.log('Raw response object:', response);
+      console.log('Response status:', response.status);
+      console.log('Response headers:', response.headers);
       
       return response.json();
     },
     onSuccess: (data) => {
+      console.log('AI Response Data:', data);
+      console.log('Data type:', typeof data);
+      console.log('Data keys:', Object.keys(data || {}));
+      console.log('Raw data string:', JSON.stringify(data, null, 2));
+      
+      // Check each field individually
+      console.log('data.response:', data?.response);
+      console.log('data.answer:', data?.answer);
+      console.log('data.result:', data?.result);
+      console.log('data.content:', data?.content);
+      console.log('data.message:', data?.message);
+      console.log('data.query:', data?.query);
+      
+      let content = '';
+      if (data?.response?.response && typeof data.response.response === 'string') content = data.response.response;
+      else if (data?.response && typeof data.response === 'string') content = data.response;
+      else if (data?.answer && typeof data.answer === 'string') content = data.answer;
+      else if (data?.result && typeof data.result === 'string') content = data.result;
+      else if (data?.content && typeof data.content === 'string') content = data.content;
+      else if (data?.message && typeof data.message === 'string') content = data.message;
+      else if (typeof data === 'string') content = data;
+      else content = 'No response received';
+      
+      console.log('Final content:', content);
+      
       const aiMessage: AIMessage = {
-        id: Date.now().toString(),
+        id: `ai-${Date.now()}`,
         role: 'assistant',
-        content: data.response,
+        content: content,
         timestamp: new Date()
       };
       setMessages(prev => [...prev, aiMessage]);
@@ -166,19 +213,11 @@ export function AIChat({ isWidget = false, roomId }: AIChatProps) {
     e.preventDefault();
     if (!input.trim() || chatMutation.isPending) return;
 
-    // Add user message
-    const userMessage: AIMessage = {
-      id: Date.now().toString(),
-      role: 'user',
-      content: input,
-      timestamp: new Date()
-    };
-    
-    setMessages(prev => [...prev, userMessage]);
+    const inputContent = input.trim();
     setInput('');
     
-    // Send to AI
-    chatMutation.mutate(input);
+    // Send to AI (mutation will handle adding user message)
+    chatMutation.mutate(inputContent);
   };
 
   useEffect(() => {
@@ -193,7 +232,7 @@ export function AIChat({ isWidget = false, roomId }: AIChatProps) {
       {/* Messages Container with Proper Height */}
       <div className="flex-1 overflow-hidden">
         <ScrollArea className="h-full">
-          <div className="p-4 space-y-3 pb-20">
+          <div className="p-4 space-y-3 pb-4 overflow-x-auto">
             {messages.map((message) => (
               <div
                 key={message.id}
@@ -202,7 +241,7 @@ export function AIChat({ isWidget = false, roomId }: AIChatProps) {
                   message.role === 'user' ? "justify-end" : "justify-start"
                 )}
               >
-                <div className="flex items-start space-x-2 max-w-[85%] sm:max-w-[75%] md:max-w-[70%] lg:max-w-[65%]">
+                <div className="flex items-start space-x-2 w-full min-w-0">
                   {message.role === 'assistant' && (
                     <div className="w-6 h-6 bg-gradient-to-br from-blue-500 to-blue-600 rounded-full flex items-center justify-center flex-shrink-0 mt-1">
                       <Brain className="w-3 h-3 text-white" />
@@ -210,14 +249,15 @@ export function AIChat({ isWidget = false, roomId }: AIChatProps) {
                   )}
                   <div
                     className={cn(
-                      "rounded-lg p-3 text-sm break-words overflow-hidden",
-                      message.role === 'user' 
-                        ? "bg-blue-600 text-white" 
-                        : "bg-gray-100 dark:bg-gray-700 text-gray-800 dark:text-gray-200"
+                      "rounded-2xl px-4 py-3 text-sm min-w-0 flex-1",
+                      message.role === 'user'
+                        ? "bg-blue-500 text-white ml-auto max-w-[80%]"
+                        : "bg-gray-100 dark:bg-gray-800 text-gray-900 dark:text-gray-100 max-w-[90%]"
                     )}
-                    data-testid={`message-${message.role}-${message.id}`}
                   >
-                    <p className="whitespace-pre-wrap break-words overflow-wrap-anywhere">{message.content}</p>
+                    <div className="whitespace-pre-wrap break-words overflow-x-auto scrollbar-thin scrollbar-thumb-gray-400 scrollbar-track-gray-200">
+                      {message.content}
+                    </div>
                     <span className="text-xs opacity-70 block mt-1">
                       {message.timestamp.toLocaleTimeString()}
                     </span>
@@ -238,21 +278,21 @@ export function AIChat({ isWidget = false, roomId }: AIChatProps) {
         </ScrollArea>
       </div>
       
-      {/* Fixed Input Section - Always Accessible */}
-      <div className="flex-shrink-0 border-t border-gray-200 dark:border-gray-700 bg-white dark:bg-gray-800 p-4 sticky bottom-0 z-10">
-        <form onSubmit={handleSubmit} className="flex items-center space-x-2">
+      {/* Fixed Input Section - Always at Bottom */}
+      <div className="flex-shrink-0 border-t border-gray-200 dark:border-gray-700 bg-white dark:bg-gray-800 p-6 mt-auto">
+        <form onSubmit={handleSubmit} className="flex items-center space-x-3">
           <Input
             value={input}
             onChange={(e) => setInput(e.target.value)}
             placeholder="Ask me anything..."
             disabled={chatMutation.isPending}
-            className="flex-1 bg-gray-100 dark:bg-gray-700 border-gray-300 dark:border-gray-600 focus:ring-2 focus:ring-blue-500 focus:border-transparent h-10"
+            className="flex-1 bg-gray-50 dark:bg-gray-700 border-gray-300 dark:border-gray-600 focus:ring-2 focus:ring-blue-500 focus:border-transparent h-12 rounded-xl px-4 text-sm"
             data-testid="input-ai-chat"
           />
           <Button
             type="submit"
             disabled={!input.trim() || chatMutation.isPending}
-            className="bg-blue-600 hover:bg-blue-700 text-white px-3 py-2 h-10"
+            className="bg-blue-600 hover:bg-blue-700 text-white px-4 py-3 h-12 rounded-xl shadow-sm hover:shadow-md transition-all duration-200"
             data-testid="button-send-ai-message"
           >
             <Send className="w-4 h-4" />

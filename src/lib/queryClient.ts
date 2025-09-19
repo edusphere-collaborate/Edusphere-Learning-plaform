@@ -12,11 +12,36 @@ export async function apiRequest(
   url: string,
   data?: unknown | undefined,
 ): Promise<Response> {
-  const res = await fetch(url, {
+  // Ensure we're using the full backend URL for API requests
+  const baseUrl = import.meta.env.VITE_API_URL || 'https://edusphere-backend-n1r8.onrender.com';
+  const fullUrl = url.startsWith('http') ? url : `${baseUrl}${url}`;
+  
+  // Get authentication token for authorized requests
+  const token = localStorage.getItem('sessionId') || sessionStorage.getItem('sessionId');
+  
+  console.log('API Request Debug:');
+  console.log('- URL:', fullUrl);
+  console.log('- Method:', method);
+  console.log('- Token exists:', !!token);
+  console.log('- Token value:', token ? `${token.substring(0, 20)}...` : 'null');
+  
+  const headers: Record<string, string> = {};
+  if (data) {
+    headers["Content-Type"] = "application/json";
+  }
+  if (token) {
+    headers["Authorization"] = `Bearer ${token}`;
+  }
+  
+  console.log('- Headers:', headers);
+  console.log('- Body:', data);
+  
+  const res = await fetch(fullUrl, {
     method,
-    headers: data ? { "Content-Type": "application/json" } : {},
+    headers,
     body: data ? JSON.stringify(data) : undefined,
-    credentials: "include",
+    // Remove credentials for CORS compatibility with wildcard origin
+    // credentials: "include",
   });
 
   await throwIfResNotOk(res);
@@ -30,8 +55,9 @@ export const getQueryFn: <T>(options: {
   ({ on401: unauthorizedBehavior }) =>
   async ({ queryKey }) => {
     const res = await fetch(queryKey.join("/") as string, {
-      credentials: "include",
-    });
+    // Remove credentials for CORS compatibility
+    // credentials: "include",
+  });
 
     if (unauthorizedBehavior === "returnNull" && res.status === 401) {
       return null;

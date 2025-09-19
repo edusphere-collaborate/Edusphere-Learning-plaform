@@ -349,8 +349,14 @@ export const useAuthenticatedFetch = () => {
     // Get authentication token
     const token = localStorage.getItem('sessionId') || sessionStorage.getItem('sessionId');
     
+    // Build full URL with backend base URL
+    const baseUrl = 'https://edusphere-backend-n1r8.onrender.com';
+    const fullUrl = url.startsWith('http') ? url : `${baseUrl}${url.startsWith('/') ? url : `/${url}`}`;
+    
+    console.log('[AUTH FETCH] Making request to:', fullUrl);
+    
     // Return standard fetch with authentication headers
-    return fetch(url, {
+    return fetch(fullUrl, {
       ...options,
       headers: {
         'Content-Type': 'application/json',

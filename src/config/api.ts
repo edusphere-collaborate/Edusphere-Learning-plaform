@@ -12,7 +12,7 @@
  */
 export const API_CONFIG = {
   // Base URLs
-  BASE_URL: import.meta.env.VITE_API_URL || 'http://localhost:3000',
+  BASE_URL: import.meta.env.VITE_API_URL || 'https://edusphere-backend-n1r8.onrender.com',
   WS_URL: import.meta.env.VITE_WS_URL || 'ws://localhost:3001',
   
   // Timeouts and limits
@@ -101,7 +101,7 @@ export const ENDPOINTS = {
   
   // AI Assistant
   AI: {
-    QUERY: '/ai/query',
+    QUERY: '/ai/aiquery',
     QUERIES: '/ai/queries',
     QUERY_BY_ID: (id: string) => `/ai/queries/${id}`,
     USER_QUERIES: (userId: string) => `/ai/users/${userId}/queries`,

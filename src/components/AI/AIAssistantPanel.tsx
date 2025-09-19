@@ -35,6 +35,7 @@ import { Tabs, TabsContent, TabsList, TabsTrigger } from '@/components/ui/tabs';
 import { useAuth } from '@/contexts/AuthContext';
 import { useAuthenticatedFetch } from '@/contexts/AuthContext';
 import { useToast } from '@/hooks/use-toast';
+import { apiRequest } from '@/lib/queryClient';
 import { cn } from '@/lib/utils';
 
 /**
@@ -248,29 +249,32 @@ export function AIAssistantPanel({
         timestamp: msg.createdAt
       }));
 
-      const response = await authenticatedFetch('/api/ai/summarize', {
-        method: 'POST',
-        headers: { 'Content-Type': 'application/json' },
-        body: JSON.stringify({
-          roomId: room.id,
-          roomName: room.name,
-          subject: room.subject,
-          messages: conversationContext
-        })
+      // Enhanced summary query with actual conversation context
+      const recentConversation = conversationContext.slice(-15).map(msg => `${msg.user}: ${msg.content}`).join('\n');
+      const summaryQuery = `Please provide a comprehensive summary of this conversation in room "${room.name}" (${room.subject}):\n\n${recentConversation}`;
+      
+      const response = await apiRequest('POST', '/ai/aiquery', {
+        userId: user?.id || '',
+        query: summaryQuery
       });
 
-      if (!response.ok) {
-        throw new Error('Failed to generate summary');
-      }
-
-      return response.json();
+      return await response.json();
     },
     onSuccess: (data) => {
-      if (data?.summary) {
+      console.log('AI Summary Response Data:', data); // Debug log
+      let responseContent = '';
+      if (data?.response?.response && typeof data.response.response === 'string') responseContent = data.response.response;
+      else if (data?.response && typeof data.response === 'string') responseContent = data.response;
+      else if (data?.answer && typeof data.answer === 'string') responseContent = data.answer;
+      else if (data?.result && typeof data.result === 'string') responseContent = data.result;
+      else if (data?.content && typeof data.content === 'string') responseContent = data.content;
+      else if (data?.message && typeof data.message === 'string') responseContent = data.message;
+      else responseContent = 'No response received';
+      if (responseContent) {
         const summaryMessage: AIMessage = {
           id: `summary-${Date.now()}`,
           type: 'assistant',
-          content: `**Conversation Summary:**\n\n${data.summary}`,
+          content: `**Conversation Summary:**\n\n${responseContent}`,
           timestamp: new Date(),
           metadata: {
             roomContext: room?.name,
@@ -319,93 +323,46 @@ export function AIAssistantPanel({
         timestamp: msg.createdAt
       }));
 
-      const response = await authenticatedFetch('/api/ai/chat', {
-        method: 'POST',
-        headers: { 'Content-Type': 'application/json' },
-        body: JSON.stringify({
-          message: content,
-          stream: true, // Request streaming response
-          roomContext: {
-            roomId: room?.id,
-            roomName: room?.name,
-            subject: room?.subject,
-            recentMessages: conversationContext
-          }
-        })
+      // Enhanced query with room context and recent messages for better AI responses
+      let enhancedQuery = content;
+      if (room && messages.length > 0) {
+        const recentMessages = conversationContext.slice(-5).map(msg => `${msg.user}: ${msg.content}`).join('\n');
+        enhancedQuery = `Context: In room "${room.name}" (${room.subject}), recent discussion:\n${recentMessages}\n\nUser question: ${content}`;
+      }
+      
+      const response = await apiRequest('POST', '/ai/aiquery', {
+        userId: user?.id || '',
+        query: enhancedQuery
       });
 
-      if (!response.ok) {
-        throw new Error('Failed to get AI response');
+      // Handle non-streaming JSON response
+      const jsonData = await response.json();
+      console.log('AI Chat Response Data:', jsonData);
+      
+      let responseContent = '';
+      if (jsonData?.response?.response && typeof jsonData.response.response === 'string') {
+        responseContent = jsonData.response.response;
+      } else if (jsonData?.response && typeof jsonData.response === 'string') {
+        responseContent = jsonData.response;
+      } else {
+        responseContent = 'No response received';
       }
-
-      // Handle streaming response
-      if (response.body) {
-        const reader = response.body.getReader();
-        const decoder = new TextDecoder();
-        let fullResponse = '';
-        let tokensUsed = 0;
-
-        // Add streaming message placeholder
-        const streamingMessageId = `ai-streaming-${Date.now()}`;
-        const streamingMessage: AIMessage = {
-          id: streamingMessageId,
-          type: 'assistant',
-          content: '',
-          timestamp: new Date(),
-          isStreaming: true,
-          tokensUsed: 0,
-          metadata: {
-            roomContext: room?.name,
-            messageCount: messages.length
-          }
-        };
-        setAiMessages(prev => [...prev, streamingMessage]);
-
-        try {
-          while (true) {
-            const { done, value } = await reader.read();
-            if (done) break;
-
-            const chunk = decoder.decode(value);
-            const lines = chunk.split('\n');
-
-            for (const line of lines) {
-              if (line.startsWith('data: ')) {
-                try {
-                  const data = JSON.parse(line.slice(6));
-                  if (data.content) {
-                    fullResponse += data.content;
-                    setStreamingText(fullResponse);
-                    
-                    // Update streaming message
-                    setAiMessages(prev => prev.map(msg => 
-                      msg.id === streamingMessageId 
-                        ? { ...msg, content: fullResponse, tokensUsed: data.tokens || 0 }
-                        : msg
-                    ));
-                  }
-                  if (data.tokens) {
-                    tokensUsed = data.tokens;
-                  }
-                } catch (e) {
-                  // Skip invalid JSON
-                }
-              }
-            }
-          }
-        } finally {
-          reader.releaseLock();
+      
+      const finalMessage: AIMessage = {
+        id: `ai-${Date.now()}`,
+        type: 'assistant',
+        content: responseContent,
+        timestamp: new Date(),
+        tokensUsed: Math.ceil(responseContent.length / 4),
+        metadata: {
+          roomContext: room?.name,
+          messageCount: messages.length
         }
-
-        // Finalize streaming message
-        setAiMessages(prev => prev.map(msg => 
-          msg.id === streamingMessageId 
-            ? { ...msg, isStreaming: false, tokensUsed }
-            : msg
-        ));
-
-        return { response: fullResponse, tokens: tokensUsed };
-      }
+      };
+      
+      setAiMessages(prev => [...prev, finalMessage]);
+      setIsStreaming(false);
+      
 
       // Fallback to non-streaming
       const data = await response.json();
@@ -415,14 +372,15 @@ export function AIAssistantPanel({
       setIsStreaming(false);
       setStreamingText('');
       
-      // If non-streaming response, add AI message
-      if (data?.response && !isStreaming) {
+      // Add AI response message
+      const responseContent = data?.response || data?.message || data?.content;
+      if (responseContent) {
         const aiResponse: AIMessage = {
           id: `ai-${Date.now()}`,
           type: 'assistant',
-          content: data.response,
+          content: responseContent,
           timestamp: new Date(),
-          tokensUsed: data.tokens || Math.ceil(data.response.length / 4),
+          tokensUsed: data.tokens || Math.ceil(responseContent.length / 4),
           metadata: {
             roomContext: room?.name,
             messageCount: messages.length
@@ -508,17 +466,9 @@ export function AIAssistantPanel({
     const content = aiInput.trim();
     if (!content) return;
 
-    // Add user message
-    const userMessage: AIMessage = {
-      id: `user-${Date.now()}`,
-      type: 'user',
-      content,
-      timestamp: new Date()
-    };
-    setAiMessages(prev => [...prev, userMessage]);
     setAiInput('');
 
-    // Send to AI
+    // Send to AI (mutation will handle adding user message)
     sendAIMessageMutation.mutate(content);
   };
 
@@ -564,6 +514,19 @@ export function AIAssistantPanel({
   }, [messages.length, room?.id]);
 
   if (!isVisible) return null;
+
+  /**
+   * Format timestamp for display in chat messages
+   * @param timestamp - Date object to format
+   * @returns Formatted time string
+   */
+  function formatTime(timestamp: Date): string {
+    return new Intl.DateTimeFormat('en-US', {
+      hour: '2-digit',
+      minute: '2-digit',
+      hour12: true
+    }).format(timestamp);
+  }
 
   return (
     <div className={cn(

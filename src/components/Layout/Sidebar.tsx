@@ -3,13 +3,14 @@ import {
   Home, 
   MessageSquare, 
   Compass, 
-  Brain, 
   User, 
   Settings,
-  PlusCircle
+  PlusCircle,
+  LogOut
 } from 'lucide-react';
 import { cn } from '@/lib/utils';
 import { Button } from '@/components/ui/button';
+import { useAuth } from '@/contexts/AuthContext';
 
 interface SidebarProps {
   isCollapsed?: boolean;
@@ -17,6 +18,18 @@ interface SidebarProps {
 
 export function Sidebar({ isCollapsed = false }: SidebarProps) {
   const [location] = useLocation();
+  const { logout } = useAuth();
+
+  /**
+   * Handle user logout with proper cleanup
+   */
+  const handleLogout = async () => {
+    try {
+      await logout();
+    } catch (error) {
+      console.error('Logout error:', error);
+    }
+  };
 
   const navigationItems = [
     {
@@ -30,12 +43,6 @@ export function Sidebar({ isCollapsed = false }: SidebarProps) {
       icon: Compass,
       label: 'Explore',
       testId: 'nav-explore'
-    },
-    {
-      href: '/ai-assistant',
-      icon: Brain,
-      label: 'AI Assistant',
-      testId: 'nav-ai-assistant'
     },
     {
       href: '/profile',
@@ -60,10 +67,10 @@ export function Sidebar({ isCollapsed = false }: SidebarProps) {
 
   return (
     <aside className={cn(
-      "bg-white dark:bg-gray-800 shadow-lg border-r border-gray-200 dark:border-gray-700 transition-all duration-300 h-screen sticky top-0",
+      "bg-white dark:bg-gray-800 shadow-lg border-r border-gray-200 dark:border-gray-700 transition-all duration-300 h-screen sticky top-0 flex flex-col",
       isCollapsed ? "w-16" : "w-64"
     )}>
-      <div className="p-4">
+      <div className="p-4 flex-1">
         {/* Create Room Button */}
         <Link href="/create-room">
           <Button 
@@ -100,6 +107,23 @@ export function Sidebar({ isCollapsed = false }: SidebarProps) {
             );
           })}
         </nav>
+      </div>
+
+      {/* Logout Button - Separated at Bottom */}
+      <div className="p-4 border-t border-gray-200 dark:border-gray-700">
+        <Button
+          onClick={handleLogout}
+          variant="ghost"
+          className={cn(
+            "w-full justify-start text-red-600 dark:text-red-400 hover:bg-red-50 dark:hover:bg-red-900/20 hover:text-red-700 dark:hover:text-red-300 transition-colors",
+            isCollapsed && "justify-center"
+          )}
+          size={isCollapsed ? "sm" : "default"}
+          data-testid="button-logout"
+        >
+          <LogOut className="w-5 h-5 flex-shrink-0" />
+          {!isCollapsed && <span className="ml-3 font-medium">Logout</span>}
+        </Button>
       </div>
     </aside>
   );

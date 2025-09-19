@@ -27,7 +27,6 @@ import CreateRoom from "@/pages/CreateRoom";
 import Room from "@/pages/Room";
 import Profile from "@/pages/Profile";
 import Settings from "@/pages/Settings";
-import AIAssistant from "@/pages/AIAssistant";
 import Rooms from "@/pages/Rooms";
 import Explore from "@/pages/Explore";
 
@@ -52,7 +51,6 @@ function Router() {
       {/* <Route path="/room/:id" component={Room} /> */} {/* Disabled to prevent navigation to different layout */}
       <Route path="/profile" component={Profile} />
       <Route path="/settings" component={Settings} />
-      <Route path="/ai-assistant" component={AIAssistant} />
       <Route component={NotFound} />
     </Switch>
   );

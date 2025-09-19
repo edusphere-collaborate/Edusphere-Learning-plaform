@@ -6,7 +6,6 @@ export function Footer() {
   // Only include links to pages that actually exist in the project
   const quickLinks = [
     { href: '/rooms', label: 'Study Rooms' },
-    { href: '/ai-assistant', label: 'AI Assistant' },
     { href: '/profile', label: 'Profile' },
     { href: '/settings', label: 'Settings' },
   ];
