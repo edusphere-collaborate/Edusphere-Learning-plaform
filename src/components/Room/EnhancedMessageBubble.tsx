@@ -134,11 +134,154 @@ export function EnhancedMessageBubble({
   }, [isEditing, editContent.length]);
 
   // Helper function to get user initials safely
-  const getInitials = (firstName?: string, lastName?: string) => {
-    const first = firstName?.[0] || '';
-    const last = lastName?.[0] || '';
-    return `${first}${last}`.toUpperCase() || message.user.username[0].toUpperCase();
+  const getInitials = (firstName: string, lastName: string) => {
+    return `${firstName?.[0] || ''}${lastName?.[0] || ''}`.toUpperCase() || '??';
   };
+
+  /**
+   * Render message content with file previews, code blocks, and links
+   */
+  const renderMessageContent = (content: string): React.ReactNode => {
+    // Early return for empty content to prevent recursion
+    if (!content || typeof content !== 'string') {
+      return null;
+    }
+
+    // Check for file patterns: [IMAGE:filename:url:size], [VIDEO:filename:url:size], [FILE:filename:url:size:type]
+    const filePattern = /\[(IMAGE|VIDEO|FILE):([^:]+):([^:]+):([^:]+)(?::([^:]+))?\]/g;
+    const codeBlockPattern = /```(\w+)?\n([\s\S]*?)```/g;
+    
+    let processedContent = content;
+    const elements: React.ReactNode[] = [];
+    let elementKey = 0;
+
+    // First, process file attachments
+    let fileMatch;
+    filePattern.lastIndex = 0; // Reset regex state
+    while ((fileMatch = filePattern.exec(processedContent)) !== null) {
+      const [fullMatch, type, filename, url, size, mimeType] = fileMatch;
+      const fileSizeInMB = (parseInt(size) / 1024 / 1024).toFixed(2);
+      
+      if (type === 'IMAGE') {
+        elements.push(
+          <div key={`file-${elementKey++}`} className="my-2">
+            <img 
+              src={url} 
+              alt={filename}
+              className="max-w-full max-h-64 rounded-lg shadow-sm cursor-pointer hover:shadow-md transition-shadow"
+              onClick={() => window.open(url, '_blank')}
+            />
+            <div className="text-xs text-gray-500 mt-1 flex items-center justify-between">
+              <span>{filename}</span>
+              <span>{fileSizeInMB} MB</span>
+            </div>
+          </div>
+        );
+      } else if (type === 'VIDEO') {
+        elements.push(
+          <div key={`file-${elementKey++}`} className="my-2">
+            <video 
+              src={url} 
+              controls
+              className="max-w-full max-h-64 rounded-lg shadow-sm"
+            >
+              Your browser does not support the video tag.
+            </video>
+            <div className="text-xs text-gray-500 mt-1 flex items-center justify-between">
+              <span>{filename}</span>
+              <span>{fileSizeInMB} MB</span>
+            </div>
+          </div>
+        );
+      } else {
+        elements.push(
+          <div key={`file-${elementKey++}`} className="my-2 p-3 bg-gray-100 dark:bg-gray-700 rounded-lg">
+            <div className="flex items-center space-x-2">
+              <FileText className="w-4 h-4 text-gray-500" />
+              <span className="text-sm font-medium">{filename}</span>
+              <Button
+                variant="ghost"
+                size="sm"
+                className="h-6 w-6 p-0"
+                onClick={() => {
+                  const link = document.createElement('a');
+                  link.href = url;
+                  link.download = filename;
+                  link.click();
+                }}
+              >
+                <Download className="w-3 h-3" />
+              </Button>
+            </div>
+            <div className="text-xs text-gray-500 mt-1">
+              {mimeType} • {fileSizeInMB} MB
+            </div>
+          </div>
+        );
+      }
+      
+      // Remove the file pattern from content to avoid reprocessing
+      processedContent = processedContent.replace(fullMatch, '');
+      filePattern.lastIndex = 0; // Reset for next iteration
+    }
+
+    // Then, process code blocks
+    let codeMatch;
+    codeBlockPattern.lastIndex = 0; // Reset regex state
+    while ((codeMatch = codeBlockPattern.exec(processedContent)) !== null) {
+      const [fullMatch, language, code] = codeMatch;
+      
+      elements.push(
+        <div key={`code-${elementKey++}`} className="my-2">
+          <div className="bg-gray-900 rounded-lg overflow-hidden">
+            <div className="flex items-center justify-between px-3 py-2 bg-gray-800">
+              <span className="text-xs text-gray-300">{language || 'text'}</span>
+              <Button
+                variant="ghost"
+                size="sm"
+                className="h-6 w-6 p-0 text-gray-300 hover:text-white"
+                onClick={() => navigator.clipboard?.writeText(code)}
+              >
+                <Copy className="w-3 h-3" />
+              </Button>
+            </div>
+            <pre className="p-3 text-sm text-gray-100 overflow-x-auto">
+              <code>{code}</code>
+            </pre>
+          </div>
+        </div>
+      );
+      
+      // Remove the code block from content to avoid reprocessing
+      processedContent = processedContent.replace(fullMatch, '');
+      codeBlockPattern.lastIndex = 0; // Reset for next iteration
+    }
+
+    // Finally, process remaining text with links
+    if (processedContent.trim()) {
+      const textWithLinks = processedContent.split(/(\bhttps?:\/\/[^\s]+)/g).map((part: string, index: number) => {
+        if (part.match(/^https?:\/\//)) {
+          return (
+            <a
+              key={`link-${elementKey}-${index}`}
+              href={part}
+              target="_blank"
+              rel="noopener noreferrer"
+              className="text-primary-600 hover:text-primary-700 underline inline-flex items-center"
+            >
+              {part}
+              <ExternalLink className="w-3 h-3 ml-1" />
+            </a>
+          );
+        }
+        return part;
+      });
+      elements.push(<span key={`text-${elementKey++}`}>{textWithLinks}</span>);
+    }
+
+    return elements.length > 0 ? elements : <span>{content}</span>;
+  };
+
 
   // Handle edit save
   const handleEditSave = () => {
@@ -186,7 +329,7 @@ export function EnhancedMessageBubble({
   };
 
   // Parse message content based on type
-  const renderMessageContent = () => {
+  const renderMessageByType = () => {
     switch (message.type) {
       case 'code':
         return (
@@ -235,27 +378,11 @@ export function EnhancedMessageBubble({
               </div>
             )}
             
-            {/* Message text with link detection */}
+            {/* Message text with file preview and link detection */}
             <div className={`whitespace-pre-wrap break-words ${
               isOwn ? 'text-white' : 'text-gray-900 dark:text-gray-100'
             }`}>
-              {message.content.split(/(\bhttps?:\/\/[^\s]+)/g).map((part: string, index: number) => {
-                if (part.match(/^https?:\/\//)) {
-                  return (
-                    <a
-                      key={index}
-                      href={part}
-                      target="_blank"
-                      rel="noopener noreferrer"
-                      className="text-primary-600 hover:text-primary-700 underline inline-flex items-center"
-                    >
-                      {part}
-                      <ExternalLink className="w-3 h-3 ml-1" />
-                    </a>
-                  );
-                }
-                return part;
-              })}
+              {renderMessageContent(message.content || '')}
             </div>
           </div>
         );
@@ -415,7 +542,7 @@ export function EnhancedMessageBubble({
                 </div>
               ) : (
                 <>
-                  {renderMessageContent()}
+                  {renderMessageByType()}
                   {message.isEdited && (
                     <div className="text-xs text-gray-400 mt-1">
                       <Edit className="w-3 h-3 inline mr-1" />

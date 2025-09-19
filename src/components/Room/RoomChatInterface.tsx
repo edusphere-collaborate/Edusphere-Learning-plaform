@@ -19,7 +19,8 @@ import {
   FileText,
   Star,
   Archive,
-  Trash2
+  Trash2,
+  Code
 } from 'lucide-react';
 import { Room, Message, User, MessageReaction, UserRole } from '@/types/api';
 import { Button } from '@/components/ui/button';
@@ -61,6 +62,7 @@ export function RoomChatInterface({ room, onClose, onRoomAction, onMessagesChang
   const [messageInput, setMessageInput] = useState('');
   const [onlineUsers, setOnlineUsers] = useState<string[]>([]);
   const [showEmojiPicker, setShowEmojiPicker] = useState(false);
+  const [uploadingFiles, setUploadingFiles] = useState<File[]>([]);
   
   // Refs
   const messagesEndRef = useRef<HTMLDivElement>(null);
@@ -131,6 +133,66 @@ export function RoomChatInterface({ room, onClose, onRoomAction, onMessagesChang
       });
     }
   });
+
+  /**
+   * Create file preview URL
+   */
+  const createFilePreview = (file: File): string => {
+    return URL.createObjectURL(file);
+  };
+
+  /**
+   * Handle file upload with preview
+   */
+  const handleFileUpload = async (event: React.ChangeEvent<HTMLInputElement>) => {
+    const files = event.target.files;
+    if (!files || files.length === 0) return;
+
+    const fileArray = Array.from(files);
+    setUploadingFiles(fileArray);
+
+    try {
+      // Show upload progress
+      toast({
+        title: "Uploading files...",
+        description: `Uploading ${fileArray.length} file(s)`,
+      });
+
+      // Process each file with preview
+      for (const file of fileArray) {
+        const fileUrl = createFilePreview(file);
+        const fileType = file.type.split('/')[0]; // 'image', 'video', etc.
+        
+        let fileMessage = '';
+        if (fileType === 'image') {
+          fileMessage = `[IMAGE:${file.name}:${fileUrl}:${file.size}]`;
+        } else if (fileType === 'video') {
+          fileMessage = `[VIDEO:${file.name}:${fileUrl}:${file.size}]`;
+        } else {
+          fileMessage = `[FILE:${file.name}:${fileUrl}:${file.size}:${file.type}]`;
+        }
+        
+        await sendMessageMutation.mutateAsync(fileMessage);
+      }
+
+      toast({
+        title: "Files uploaded successfully",
+        description: `${fileArray.length} file(s) shared in the room`,
+      });
+
+    } catch (error) {
+      console.error('File upload error:', error);
+      toast({
+        title: "Upload failed",
+        description: "Failed to upload files. Please try again.",
+        variant: "destructive",
+      });
+    } finally {
+      setUploadingFiles([]);
+      // Reset file input
+      event.target.value = '';
+    }
+  };
 
   /**
    * Handle sending a message
@@ -685,7 +747,25 @@ export function RoomChatInterface({ room, onClose, onRoomAction, onMessagesChang
           <div className="flex-shrink-0 p-4 border-t border-gray-200 dark:border-gray-700 bg-white dark:bg-gray-900">
             <div className="flex items-end space-x-3">
               {/* Attachment Button */}
-              <Button variant="ghost" size="sm" className="h-9 w-9 p-0 flex-shrink-0">
+              <input
+                type="file"
+                id="file-upload"
+                className="hidden"
+                multiple
+                accept="image/*,video/*,.pdf,.doc,.docx,.txt"
+                onChange={handleFileUpload}
+              />
+              <Button 
+                variant="ghost" 
+                size="sm" 
+                className={cn(
+                  "h-9 w-9 p-0 flex-shrink-0 hover:bg-gray-100 dark:hover:bg-gray-700",
+                  uploadingFiles.length > 0 && "animate-pulse bg-blue-100 dark:bg-blue-900"
+                )}
+                onClick={() => document.getElementById('file-upload')?.click()}
+                title="Upload files"
+                disabled={uploadingFiles.length > 0}
+              >
                 <Paperclip className="w-4 h-4" />
               </Button>
 
@@ -731,6 +811,32 @@ export function RoomChatInterface({ room, onClose, onRoomAction, onMessagesChang
                 </Popover>
               </div>
 
+              {/* Code Block Button */}
+              <Button 
+                variant="ghost" 
+                size="sm" 
+                className="h-9 w-9 p-0 flex-shrink-0 hover:bg-gray-100 dark:hover:bg-gray-700"
+                onClick={() => {
+                  const cursorPos = inputRef.current?.selectionStart || 0;
+                  const textBefore = messageInput.substring(0, cursorPos);
+                  const textAfter = messageInput.substring(cursorPos);
+                  const codeBlock = '\n```\n\n```\n';
+                  const newText = textBefore + codeBlock + textAfter;
+                  setMessageInput(newText);
+                  // Set cursor position inside code block
+                  setTimeout(() => {
+                    if (inputRef.current) {
+                      const newCursorPos = cursorPos + 5; // Position after ```\n
+                      inputRef.current.setSelectionRange(newCursorPos, newCursorPos);
+                      inputRef.current.focus();
+                    }
+                  }, 0);
+                }}
+                title="Insert code block"
+              >
+                <Code className="w-4 h-4" />
+              </Button>
+
               {/* Send Button */}
               <Button
                 onClick={handleSendMessage}
@@ -740,16 +846,6 @@ export function RoomChatInterface({ room, onClose, onRoomAction, onMessagesChang
                 <Send className="w-4 h-4" />
               </Button>
             </div>
-            
-            {/* Typing Indicator - Only show for OTHER users typing */}
-            {typingUsers.length > 0 && (
-              <div className="mt-2 text-sm text-gray-500 dark:text-gray-400">
-                {typingUsers.length === 1 
-                  ? `${typingUsers[0]} is typing...` 
-                  : `${typingUsers.length} people are typing...`
-                }
-              </div>
-            )}
           </div>
         </div>
 
@@ -793,4 +889,4 @@ export function RoomChatInterface({ room, onClose, onRoomAction, onMessagesChang
       </div>
     </div>
   );
-}
+};
